@@ -9,6 +9,8 @@ import { SingerService } from '../../services/singer.service';
 })
 export class SingerComponent implements OnInit {
 
+  //change test main
+
   singers: Singer[] = [];  
   selectedSingerId: string | null = null; 
   searchTerm: string = ''; // Arama terimi için değişken
