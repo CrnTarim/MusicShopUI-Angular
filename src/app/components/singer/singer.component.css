@@ -1,0 +1,18 @@
+.singer-list-container {
+    max-height: 700px;
+    overflow-y: auto; /* Dikey kaydırma çubuğu ekle */
+    border: 1px solid #e0e0e0; /* Kenar çizgisi */
+    border-radius: 10px; /* Kenar yuvarlama */
+    padding: 10px; /* İç boşluk */
+    background-color: #fff; /* Arka plan rengi */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+}
+
+.list-group-item {
+    width: 100%; /* Liste elemanlarının genişliğini sınırla */
+}
+
+.card {
+    max-width: 100%; /* Kartın genişliğini sınırla */
+    overflow: hidden; /* Taşmayı önle */
+}

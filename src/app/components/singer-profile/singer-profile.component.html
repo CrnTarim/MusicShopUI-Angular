@@ -1,0 +1,15 @@
+<div *ngIf="singer">
+  <h2>{{ singer.name }} Profili</h2>
+  <!-- Diğer bilgileri ekleyin -->
+  <button routerLink="/singer-list" class="btn btn-primary">Geri Dön</button> <!-- Ana sayfaya dönmek için -->
+  
+  <h3>Şarkıları</h3>
+  <div class="song-list">
+    <div *ngFor="let song of singles" class="song-card" (click)="setActiveSong(song)">
+      <h4>{{ song.name }}</h4>
+      <p>Kategori: {{ song.category }}</p>
+      <p>Fiyat: {{ song.price }} TL</p>
+    </div>
+  </div>
+</div>
+

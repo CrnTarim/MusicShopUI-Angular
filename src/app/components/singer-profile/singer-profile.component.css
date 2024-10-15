@@ -1,0 +1,26 @@
+.song-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px; /* Kartlar arasındaki boşluk */
+    justify-content: space-between;
+  }
+  
+  .song-card {
+    background-color: #f8f9fa; /* Açık gri arka plan */
+    border: 1px solid #dee2e6; /* Border */
+    border-radius: 5px; /* Kenar yuvarlama */
+    padding: 15px; /* İç boşluk */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Gölgelendirme */
+    transition: transform 0.2s; /* Geçiş efekti */
+    cursor: pointer; /* İmleci el simgesi yap */
+  }
+  
+  .song-card:hover {
+    transform: translateY(-3px); /* Hover efekti */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Daha belirgin gölgelendirme */
+  }
+  
+  .btn {
+    margin-bottom: 20px; /* Düğme ile şarkı listesi arasındaki boşluk */
+  }
+  
