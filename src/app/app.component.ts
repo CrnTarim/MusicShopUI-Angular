@@ -3,6 +3,7 @@ import { SingleSong } from './models/singlesong';
 import { Store } from '@ngrx/store';
 import { selectActiveSingleSong } from './state/song/song.selector';
 import { Observable } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -12,12 +13,33 @@ import { Observable } from 'rxjs';
 export class AppComponent {
   title = 'mushicshopUI';
 
-  activeSingleSong$: Observable<SingleSong | null>; // Observable olarak tanımlandı
+  activeSingleSong$: Observable<SingleSong | null>; 
+  isUserLoggedIn: boolean = false;
 
-  constructor(private store: Store) {
-    this.activeSingleSong$ = this.store.select(selectActiveSingleSong); // Store'dan alındı
+  constructor(private store: Store,private router: Router) {
+    
+    this.activeSingleSong$ = this.store.select(selectActiveSingleSong); 
   }
   ngOnInit(): void {
+     
+    const userId = localStorage.getItem('userId');
+    this.isUserLoggedIn = !!userId; 
     this.activeSingleSong$ = this.store.select(selectActiveSingleSong);
   }
+
+  goToProfile() {
+    const userId = localStorage.getItem('userId');
+    console.log('User ID from localStorage:', userId); // Kullanıcı ID'sini kontrol ediyoruz
+    
+    if (userId) {
+      // Eğer userId varsa, profile yönlendiriyoruz
+      this.router.navigate(['/user-profile', userId]);
+    } else {
+      console.log('User not logged in, redirecting to login');
+    }
+  }
+  
+  
+  
+  
 }

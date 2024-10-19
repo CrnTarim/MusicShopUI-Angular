@@ -28,6 +28,8 @@ export class SingerComponent implements OnInit {
     }, error => {
       console.error('Şarkıcıları alırken bir hata oluştu:', error);
     });
+
+    console.log("selam singer bu")
   }
 
   toggleCard(id: string): void {

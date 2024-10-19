@@ -13,8 +13,11 @@ import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { EffectsModule } from '@ngrx/effects';
 import { singlesongReducer } from './state/song/song.reducer';
+import { UserComponent } from './components/user/user.component';
+import { LoginComponent } from './components/login/login.component';
+import { FavouritesongsComponent } from './components/favouritesongs/favouritesongs.component';
 
-
+// ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
 
 
 @NgModule({
@@ -23,7 +26,10 @@ import { singlesongReducer } from './state/song/song.reducer';
     SingerComponent,
     SingerSearchPipe,
     SingerProfileComponent,
-    OrderByPipe // ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
+    OrderByPipe,
+    UserComponent,
+    LoginComponent,
+    FavouritesongsComponent 
 
     
   ],
