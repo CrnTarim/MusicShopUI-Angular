@@ -29,13 +29,12 @@ export class AppComponent {
 
   goToProfile() {
     const userId = localStorage.getItem('userId');
-    console.log('User ID from localStorage:', userId); // Kullanıcı ID'sini kontrol ediyoruz
+    console.log('User ID from localStorage:', userId); 
     
     if (userId) {
-      // Eğer userId varsa, profile yönlendiriyoruz
       this.router.navigate(['/user-profile', userId]);
     } else {
-      console.log('User not logged in, redirecting to login');
+      this.router.navigate(['/login']);
     }
   }
   
