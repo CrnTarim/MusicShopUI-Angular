@@ -6,11 +6,16 @@ import { LoginComponent } from './components/login/login.component';
 import { FavouritesongsComponent } from './components/favouritesongs/favouritesongs.component';
 import { UserComponent } from './components/user/user.component';
 import { AuthGuard } from './services/auth.guard';
+import { PreventLoginGuardService } from './services/prevent-login.guard';
 
 const routes: Routes = [
   {path:'singer-list',component:SingerComponent},
   {path:'singer-profile/:id',component:SingerProfileComponent},
-  {path:'login',component:LoginComponent},
+  {
+    path: 'login',
+    component: LoginComponent,
+    canActivate: [PreventLoginGuardService],
+  },
   {path:'favourite-songs',component:FavouritesongsComponent},
   {path:'user-profile/:id', component: UserComponent, canActivate: [AuthGuard]},
   {path:'favsong',component:FavouritesongsComponent},

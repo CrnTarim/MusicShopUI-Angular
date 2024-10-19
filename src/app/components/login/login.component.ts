@@ -26,14 +26,13 @@ export class LoginComponent {
     
     this.userService.userLogin(loginPayload).subscribe({
       next: (userId) => {
-        // Giriş başarılı olduysa kullanıcı ID'sini logla
+       
        console.log("userId:",userId);
-        localStorage.setItem('userId', userId); // Burada gerçek kullanıcı ID'sini kullanmalısınız
+        localStorage.setItem('userId', userId);
         this.router.navigate(['/singer-list']);
         
       },
       error: (err) => {
-        // Hata durumunda mesaj göster
         this.errorMessage = err.error || 'Login failed. Please try again.';
       }
     });
