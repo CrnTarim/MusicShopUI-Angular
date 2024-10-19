@@ -1,0 +1,16 @@
+<div class="favourite-songs-container">
+    <h2>User Favourite Songs</h2>
+  
+    <!-- Eğer şarkılar varsa listeyi göster -->
+    <ul *ngIf="favouriteSongs.length > 0; else noSongs">
+      <li *ngFor="let song of favouriteSongs">
+        <strong>{{ song.name }}</strong> - {{ song.category }} - {{ song.price | currency }}
+      </li>
+    </ul>
+  
+    <!-- Eğer şarkı yoksa bu mesajı göster -->
+    <ng-template #noSongs>
+      <p>No favourite songs found for this user.</p>
+    </ng-template>
+  </div>
+  

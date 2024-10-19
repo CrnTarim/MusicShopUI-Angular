@@ -6,13 +6,18 @@
   <div class="collapse navbar-collapse" id="navbarText">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
-        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+        <a class="nav-link" [routerLink]="['/']">Home <span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="#">Features</a>
+        <a class="nav-link"  [routerLink]="['/singer-list']">Singer List</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="#">Pricing</a>
+        <a class="nav-link" (click)="goToProfile()">Profile</a>
+      </li>
+      
+      <!-- Eğer localStorage'da userId yoksa Login butonu görünür -->
+      <li class="nav-item" *ngIf="!isUserLoggedIn">
+        <a class="nav-link" [routerLink]="['/login']">Login</a>
       </li>
     </ul>
     <span class="navbar-text">
