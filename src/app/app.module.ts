@@ -16,6 +16,7 @@ import { singlesongReducer } from './state/song/song.reducer';
 import { UserComponent } from './components/user/user.component';
 import { LoginComponent } from './components/login/login.component';
 import { FavouritesongsComponent } from './components/favouritesongs/favouritesongs.component';
+import { MessageComponent } from './components/message/message.component';
 
 // ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
 
@@ -29,7 +30,8 @@ import { FavouritesongsComponent } from './components/favouritesongs/favouriteso
     OrderByPipe,
     UserComponent,
     LoginComponent,
-    FavouritesongsComponent 
+    FavouritesongsComponent,
+    MessageComponent 
 
     
   ],

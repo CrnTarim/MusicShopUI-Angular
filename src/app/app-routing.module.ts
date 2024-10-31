@@ -7,6 +7,7 @@ import { FavouritesongsComponent } from './components/favouritesongs/favouriteso
 import { UserComponent } from './components/user/user.component';
 import { AuthGuard } from './services/auth.guard';
 import { PreventLoginGuardService } from './services/prevent-login.guard';
+import { MessageComponent } from './components/message/message.component';
 
 const routes: Routes = [
   {path:'singer-list',component:SingerComponent},
@@ -18,6 +19,7 @@ const routes: Routes = [
   },
   {path:'favourite-songs',component:FavouritesongsComponent},
   {path:'user-profile/:id', component: UserComponent, canActivate: [AuthGuard]},
+  { path: 'message', component: MessageComponent, canActivate: [AuthGuard] },
   {path:'favsong',component:FavouritesongsComponent},
   
 
