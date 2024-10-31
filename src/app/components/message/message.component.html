@@ -1,0 +1,11 @@
+<div class="messages">
+  <div *ngFor="let message of messages">
+    <p><strong>{{ message.senderId }}:</strong> {{ message.content }}</p>
+  </div>
+</div>
+
+<div class="message-input">
+  <input type="text" [(ngModel)]="newMessage" placeholder="Mesajınızı yazın...">
+  <button (click)="sendMessage()">Gönder</button>
+</div>
+
