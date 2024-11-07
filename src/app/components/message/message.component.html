@@ -1,11 +1,10 @@
-<div class="messages">
-  <div *ngFor="let message of messages">
-    <p><strong>{{ message.senderId }}:</strong> {{ message.content }}</p>
+<div>
+  <input [(ngModel)]="message" placeholder="Mesaj yazın" />
+  <input [(ngModel)]="targetConnectionId" placeholder="Hedef Connection ID" />
+  <button (click)="sendMessage()">Mesaj Gönder</button>
+
+  <div>
+    <h3>Alınan Mesajlar:</h3>
+    <div *ngFor="let msg of receivedMessages">{{ msg }}</div>
   </div>
 </div>
-
-<div class="message-input">
-  <input type="text" [(ngModel)]="newMessage" placeholder="Mesajınızı yazın...">
-  <button (click)="sendMessage()">Gönder</button>
-</div>
-
