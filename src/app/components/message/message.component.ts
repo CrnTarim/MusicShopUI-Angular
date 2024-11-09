@@ -10,22 +10,24 @@ import { Observable, Subscription } from 'rxjs';
   styleUrl: './message.component.css'
 })
 export class MessageComponent  {
-   userId: string = '';       // Kullanıcının kimliğini temsil eden ID
-  targetUserId: string = '';  // Mesaj gönderilecek kullanıcının ID'si
-  message: string = '';       // Gönderilecek mesaj
-  receivedMessage: string = '';// Gelen mesajları göstermek için
-  connected: boolean = false; // Kullanıcının bağlantı durumu
+  targetUserId: string = '';  
+  message: string = '';       
+  receivedMessages: string[] = [];  
+  connected: boolean = false; 
 
   constructor(private messagesService: MessagesService) {
-    // Mesaj geldiğinde receivedMessage değişkenini günceller
+    
     this.messagesService.message$.subscribe(message => {
-      this.receivedMessage = message;
+      this.receivedMessages.push(message); 
     });
+
+    this.connect();
   }
 
   connect(): void {
-    if (this.userId) {
-      this.messagesService.startConnection(this.userId);
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      this.messagesService.startConnection(userId);
       this.connected = true;
     }
   }
@@ -33,7 +35,7 @@ export class MessageComponent  {
   sendMessage(): void {
     if (this.targetUserId && this.message.trim()) {
       this.messagesService.sendMessageToUser(this.targetUserId, this.message);
-      this.message = '';  // Mesaj kutusunu temizle
+      this.message = '';  
     }
   }
 }
