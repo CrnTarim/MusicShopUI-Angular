@@ -10,26 +10,30 @@ import { Observable, Subscription } from 'rxjs';
   styleUrl: './message.component.css'
 })
 export class MessageComponent  {
-  message: string = '';  
-  targetConnectionId: string = '';  
-  receivedMessages: string[] = []; 
+   userId: string = '';       // Kullanıcının kimliğini temsil eden ID
+  targetUserId: string = '';  // Mesaj gönderilecek kullanıcının ID'si
+  message: string = '';       // Gönderilecek mesaj
+  receivedMessage: string = '';// Gelen mesajları göstermek için
+  connected: boolean = false; // Kullanıcının bağlantı durumu
 
-  constructor(private messagesService: MessagesService) { }
-
-  ngOnInit(): void {
-   
+  constructor(private messagesService: MessagesService) {
+    // Mesaj geldiğinde receivedMessage değişkenini günceller
     this.messagesService.message$.subscribe(message => {
-      if (message) {
-        this.receivedMessages.push(message);  
-      }
+      this.receivedMessage = message;
     });
   }
 
-  // Hedef kullanıcıya mesaj gönder
+  connect(): void {
+    if (this.userId) {
+      this.messagesService.startConnection(this.userId);
+      this.connected = true;
+    }
+  }
+
   sendMessage(): void {
-    if (this.targetConnectionId && this.message.trim()) {
-      this.messagesService.sendMessageToUser(this.targetConnectionId, this.message);
-      this.message = ''; 
+    if (this.targetUserId && this.message.trim()) {
+      this.messagesService.sendMessageToUser(this.targetUserId, this.message);
+      this.message = '';  // Mesaj kutusunu temizle
     }
   }
 }

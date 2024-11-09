@@ -1,10 +1,17 @@
 <div>
-  <input [(ngModel)]="message" placeholder="Mesaj yazın" />
-  <input [(ngModel)]="targetConnectionId" placeholder="Hedef Connection ID" />
-  <button (click)="sendMessage()">Mesaj Gönder</button>
+  <!-- Kullanıcının ID'sini girmesi için giriş alanı -->
+  <input [(ngModel)]="userId" placeholder="User ID girin" />
+  <button (click)="connect()">Bağlan</button>
+</div>
 
-  <div>
-    <h3>Alınan Mesajlar:</h3>
-    <div *ngFor="let msg of receivedMessages">{{ msg }}</div>
-  </div>
+<div *ngIf="connected">
+  <!-- Hedef kullanıcı ID'sini ve mesajı girmesi için giriş alanları -->
+  <input [(ngModel)]="targetUserId" placeholder="Hedef User ID" />
+  <input [(ngModel)]="message" placeholder="Mesajınızı yazın" />
+  <button (click)="sendMessage()">Gönder</button>
+</div>
+
+<div *ngIf="receivedMessage">
+  <h3>Gelen Mesaj:</h3>
+  <p>{{ receivedMessage }}</p>
 </div>

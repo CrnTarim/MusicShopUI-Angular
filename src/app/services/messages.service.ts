@@ -9,43 +9,34 @@ import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@micros
   providedIn: 'root'
 })
 export class MessagesService {
-  private hubConnection: HubConnection;
+  private hubConnection!: HubConnection;
 
   private messageSource = new BehaviorSubject<string>('');  
   message$ = this.messageSource.asObservable();
 
-  private currentConnectionId: any;  
-  constructor() {
+  constructor() {}
+
+  startConnection(userId: string) {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('https://localhost:7151/chatHub')  
+      .withUrl('https://localhost:7151/chatHub')
       .build();
 
     this.hubConnection.start()
       .then(() => {
         console.log('SignalR bağlantısı kuruldu');
-        this.currentConnectionId = this.hubConnection.connectionId; 
-        console.log('Connection ID:', this.currentConnectionId);  
+        // Backend’e userId'yi kaydet
+        this.hubConnection.invoke('RegisterUser', userId);
       })
-      .catch(err => {
-        console.error('Bağlantı hatası:', err);
-      });
+      .catch(err => console.error('Bağlantı hatası:', err));
 
     this.hubConnection.on('ReceiveMessage', (message: string) => {
-      this.messageSource.next(message);  
+      this.messageSource.next(message);  // Mesaj geldiğinde güncelle
     });
   }
 
-  private isConnectionReady(): boolean {
-    return this.hubConnection.state === HubConnectionState.Connected;
+  // Belirli bir kullanıcıya mesaj gönder
+  sendMessageToUser(targetUserId: string, message: string): void {
+    this.hubConnection.invoke('SendMessageToUser', targetUserId, message)
+      .catch(err => console.error('Mesaj gönderme hatası:', err));
   }
- 
-  sendMessageToUser(targetConnectionId: string, message: string): void {
-    if (this.isConnectionReady() && targetConnectionId && message.trim()) {
-      
-      this.hubConnection.invoke('SendMessageToUser', targetConnectionId, message)
-        .catch(err => console.error('Mesaj gönderme hatası:', err));
-    } else {
-      console.error('Bağlantı kurulamadı veya geçerli bağlantı ID bulunamadı');
-    }
-  } 
 }
