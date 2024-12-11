@@ -1,0 +1,15 @@
+<div class="message-container">
+  <!-- Hedef kullanıcı ID'sini ve mesajı girmesi için giriş alanları -->
+  <div class="input-group">
+    <input [(ngModel)]="targetUserId" placeholder="Hedef User ID" class="input-field" />
+    <input [(ngModel)]="message" placeholder="Mesajınızı yazın" class="input-field" />
+  </div>
+  <button (click)="sendMessage()" class="send-button">Gönder</button>
+</div>
+
+<div *ngIf="receivedMessages.length > 0" class="received-messages">
+  <h3>Gelen Mesajlar:</h3>
+  <div *ngFor="let msg of receivedMessages" class="message-item">
+    <p>{{ msg }}</p>
+  </div>
+</div>
