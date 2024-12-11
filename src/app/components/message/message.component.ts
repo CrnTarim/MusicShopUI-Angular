@@ -1,3 +1,4 @@
+import { MessagepostService } from './../../services/messagepost.service';
 
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Message } from '../../models/message';
@@ -15,7 +16,7 @@ export class MessageComponent  {
   receivedMessages: string[] = [];  
   connected: boolean = false; 
 
-  constructor(private messagesService: MessagesService) {
+  constructor(private messagesService: MessagesService,private messagepost:MessagepostService) {
     
     this.messagesService.message$.subscribe(message => {
       this.receivedMessages.push(message); 
@@ -35,7 +36,25 @@ export class MessageComponent  {
   sendMessage(): void {
     if (this.targetUserId && this.message.trim()) {
       this.messagesService.sendMessageToUser(this.targetUserId, this.message);
+      this.saveMessage();
       this.message = '';  
     }
+  }
+
+  saveMessage(): void {
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+
+    const messageToSend: Message = {
+      senderId: userId,
+      receiverId: this.targetUserId,
+      content: this.message,
+      timestamp: new Date()
+    };
+
+    this.messagepost.postMessage(messageToSend).subscribe({
+      next: () => console.log('Message saved successfully'),
+      error: (err) => console.error('Error saving message:', err)
+    });
   }
 }
