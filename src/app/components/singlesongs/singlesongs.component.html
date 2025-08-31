@@ -1,0 +1,40 @@
+<dx-data-grid
+  [dataSource]="singleSongList"
+  [showBorders]="true"
+  [hoverStateEnabled]="true"
+  (onRowClick)="fillForm($event)">
+  <dxi-column dataField="singerName" caption="Şarkıcı"></dxi-column>
+  <dxi-column dataField="name" caption="Şarkı"></dxi-column>
+  <dxi-column dataField="category" caption="Kategori"></dxi-column>
+  <dxi-column dataField="price" caption="Fiyat"></dxi-column>
+  <dxi-column dataField="singerId" caption="Şarkıcı ID"></dxi-column>
+</dx-data-grid>
+
+<hr>
+
+<h4>Yeni Şarkı Ekle</h4>
+<div style="max-width:420px">
+  <label style="margin-top:12px">Şarkıcı</label>
+  <dx-select-box
+    [dataSource]="singers"
+    displayExpr="name"
+    valueExpr="id"
+    [(value)]="form.singerId"
+    [searchEnabled]="true"
+    (onSelectionChanged)="onSingerChange($event)">
+  </dx-select-box>
+
+  <label>Şarkı adı</label>
+  <input class="form-control" [(ngModel)]="form.name" placeholder="Ad" name="name">
+
+  <label style="margin-top:12px">Kategori</label>
+  <input class="form-control" [(ngModel)]="form.category" placeholder="Kategori" name="category">
+
+  <label style="margin-top:12px">Fiyat</label>
+  <input class="form-control" type="number" min="0" step="0.01" [(ngModel)]="form.price" name="price">
+
+   <div style="margin-top:12px; display:flex; gap:8px;">
+    <button class="btn btn-primary" (click)="save()" [disabled]="saving">Kaydet</button>
+    <button class="btn btn-danger"  *ngIf="showDelete" (click)="deleteSelected()" [disabled]="!form?.id || deleting">Sil</button>
+  </div>
+</div>

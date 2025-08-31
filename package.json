@@ -22,6 +22,9 @@
     "@ngrx/effects": "^18.1.0",
     "@ngrx/store": "^18.1.0",
     "@ngrx/store-devtools": "^18.1.0",
+    "devextreme": "25.1.4",
+    "devextreme-angular": "25.1.4",
+    "devextreme-schematics": "^1.11.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"
@@ -32,6 +35,8 @@
     "@angular/compiler-cli": "^18.2.0",
     "@ngrx/schematics": "^18.1.0",
     "@types/jasmine": "~5.1.0",
+    "devextreme-cli": "latest",
+    "devextreme-themebuilder": "25.1.4",
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

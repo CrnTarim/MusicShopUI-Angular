@@ -8,6 +8,10 @@ import { UserComponent } from './components/user/user.component';
 import { AuthGuard } from './services/auth.guard';
 import { PreventLoginGuardService } from './services/prevent-login.guard';
 import { MessageComponent } from './components/message/message.component';
+import { PersonComponent } from './components/person/person.component';
+import { SinglesongsComponent } from './components/singlesongs/singlesongs.component';
+import { BeatComponent } from './components/beat/beat.component';
+import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
 
 const routes: Routes = [
   {path:'singer-list',component:SingerComponent},
@@ -19,10 +23,12 @@ const routes: Routes = [
   },
   {path:'favourite-songs',component:FavouritesongsComponent},
   {path:'user-profile/:id', component: UserComponent, canActivate: [AuthGuard]},
-  { path: 'message', component: MessageComponent, canActivate: [AuthGuard] },
+  {path: 'message', component: MessageComponent, canActivate: [AuthGuard] },
   {path:'favsong',component:FavouritesongsComponent},
-  
-
+  {path:'person',component:PersonComponent},
+  {path:'songs',component:SinglesongsComponent},
+  {path:'beats',component:BeatComponent},
+  {path:'singlebeats',component:SinglebeatComponent}
   
 ];
 

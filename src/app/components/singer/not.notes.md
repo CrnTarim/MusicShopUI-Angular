@@ -1,8 +1,5 @@
-
-
-
-<ng-container *ngIf="true">
- 
+<ng-container *ngIf="false">
+  <!-- Arama Çubuğu -->
   <div class="container" style="margin-top: 20px;">
     <h3>Şarkıcılar</h3>
 
@@ -14,12 +11,8 @@
         placeholder="Şarkıcı adı ile ara"
       />
     </div>
-   
-    <button class="btn btn-primary mb-3" (click)="showList = !showList">
-    {{ showList ? 'Listeyi Gizle' : 'Şarkıcıları Getir' }}
-    </button>
 
-    <div class="singer-list-container"  *ngIf="showList">
+    <div class="singer-list-container">
       <div class="list-group">
         <div class="list-group-item" *ngFor="let singer of singers | singerSearch: searchTerm | orderBy: 'name'">
           <div class="d-flex justify-content-between align-items-center">
@@ -42,29 +35,4 @@
       </div>
     </div>
   </div>
-</ng-container> 
-
-
-
-<!-- <div class="container" style="margin-top:20px;">
-  <h3>Şarkıcılar</h3>
-  <ul *ngIf="singers?.length">
-    <li *ngFor="let s of singers">{{ s?.name }}</li>
-  </ul>
-</div>
-
-<div class="container" style="margin-top:20px;">
-  <h3>Şarkılar</h3>
-  <ul *ngIf="singleSongList?.length">
-    <li *ngFor="let s of singleSongList">
-      {{ s?.name }}<br>
-      {{ s?.category }}
-    </li>
-  </ul>
-</div> -->
-
-
-
-
-
-
+</ng-container>

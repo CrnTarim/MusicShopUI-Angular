@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Singer } from '../../models/singer';
 import { SingerService } from '../../services/singer.service';
+import { SinglesongService } from '../../services/singlesong.service';
+import { SingleSong } from '../../models/singlesong';
 
 @Component({
   selector: 'app-singer',
@@ -12,14 +14,24 @@ export class SingerComponent implements OnInit {
   //change test main
 
   singers: Singer[] = [];  
+  singleSongList:SingleSong[]=[];
+  singleSong= new SingleSong();
   selectedSingerId: string | null = null; 
   searchTerm: string = ''; // Arama terimi için değişken
+  showLegacyList = false;
+  showList = false;
+
   
 
-  constructor(private singerService: SingerService) { }
+  constructor(private singerService: SingerService,private singlesongService:SinglesongService) { }
 
   ngOnInit(): void {
     this.getSingers();
+    this.getSingleSong();
+  }
+  
+  toggleCard(id: string): void {
+    this.selectedSingerId = this.selectedSingerId === id ? null : id;
   }
 
   getSingers(): void {
@@ -32,20 +44,21 @@ export class SingerComponent implements OnInit {
     console.log("selam singer bu")
   }
 
-  toggleCard(id: string): void {
-    this.selectedSingerId = this.selectedSingerId === id ? null : id;
+    getSingleSong(){
+    this.singlesongService.getSingles().subscribe(
+      (data:SingleSong[])=>{
+        this.singleSongList=data;
+      }, error => {
+      console.error('Şarkıcıları alırken bir hata oluştu:', error);
+    });
   }
 
+
+  postSingleSong(){
+    this.singlesongService.postSingleSong(this.singleSong).subscribe(
+      response => console.log('Post created successfully:',response),
+      error => console.error('Error',error)
+    )
+  } 
+
 }
-
-/*
-Seçili Şarkıcıyı Gizleme Durumu:
-
-selectedSingerId değeri "123" ve id değeri de "123" ise:
-Koşul: true (eşitler)
-Sonuç: null (şarkıcıyı gizle)
-Yeni Bir Şarkıcıyı Seçme Durumu:
-
-selectedSingerId değeri "123" ve id değeri "456" ise:
-Koşul: false (eşit değiller)
-Sonuç: "456" (yeni şarkıcıyı seç ve bilgilerini göster) */

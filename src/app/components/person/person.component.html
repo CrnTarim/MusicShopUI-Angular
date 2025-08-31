@@ -1,0 +1,108 @@
+<div class="container mt-3">
+
+  <h4>Person List</h4>
+  <button class="btn btn-sm btn-secondary mb-2" (click)="new()">Yeni</button>
+
+  <table class="table table-sm table-hover">
+    <thead>
+      <tr>
+        <th>Identity</th><th>Email</th><th>Phone</th><th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of personList" (click)="select(p)" style="cursor:pointer">
+        <td>{{ p.identityNo }}</td>
+        <td>{{ p.email }}</td>
+        <td>{{ p.phone }}</td>
+        <td>{{ p.role }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h4>{{ selectedPerson ? 'Güncelle' : 'Yeni Kayıt' }}</h4>
+
+  <!-- hasChanges kaldırıldı; sadece valid'e bakıyoruz -->
+  <form #f="ngForm" (ngSubmit)="save()">
+<!-- 
+<div class="form-group">
+  <label>Identity No</label>
+
+
+  <input *ngIf="!isEditingTc"
+         class="form-control"
+         [value]="maskIdentity(viewModel?.identityNo)"
+         readonly>
+
+  
+  <input *ngIf="isEditingTc"
+         class="form-control"
+         name="identityNo"
+         [(ngModel)]="viewModel.identityNo"
+         placeholder="TC"
+         inputmode="numeric"
+         pattern="\d{11}"
+         maxlength="11"
+         required>
+</div> -->
+
+<div class="form-group">
+  <label>Identity No</label>
+
+  <!-- Görüntü modu: maskeli + inaktif -->
+   <input *ngIf="!isEditingTc"
+         class="form-control"
+         [value]="viewModel.identityNo" 
+         disabled                        
+         [attr.tabindex]="-1">
+
+  <!-- Düzenleme modu: gerçek değer, 11 hane kısıtlı -->
+  <input *ngIf="isEditingTc"
+         class="form-control"
+         name="identityNo"
+         [(ngModel)]="viewModel.identityNo"
+         placeholder="TC"
+         inputmode="numeric"
+         pattern="\d{11}"
+         maxlength="11"
+         required>
+</div>
+
+
+    <div class="form-group">
+      <label>Email</label>
+      <input class="form-control" name="email" [(ngModel)]="viewModel.email" email required>
+    </div>
+
+    <div class="form-group">
+      <label>Phone</label>
+      <input class="form-control" name="phone" [(ngModel)]="viewModel.phone">
+    </div>
+
+    <div class="form-group">
+      <label>Role</label>
+      <input class="form-control" name="role" [(ngModel)]="viewModel.role">
+    </div>
+
+    <button class="btn btn-primary" type="submit" [disabled]="f.invalid">
+      Kaydet
+    </button>
+  </form>
+</div>
+
+
+<!-- 
+<div class="form-group">
+  <label for="uniqrefno">Kullanıcı Adı</label>
+  <dx-text-box
+    id="uniqrefno"
+    name="uniqrefno"
+    [(ngModel)]="viewModel.uniqrefno"
+    placeholder="TC"
+    [showClearButton]="true"
+    mask="00000000000"
+    maskChar="#"
+    showMaskMode="onFocus">
+  </dx-text-box>
+</div> -->

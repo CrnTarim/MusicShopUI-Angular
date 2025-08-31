@@ -17,6 +17,11 @@ import { UserComponent } from './components/user/user.component';
 import { LoginComponent } from './components/login/login.component';
 import { FavouritesongsComponent } from './components/favouritesongs/favouritesongs.component';
 import { MessageComponent } from './components/message/message.component';
+import { DxSelectBoxModule, DxDataGridModule, DxListModule, DxTextBoxModule } from 'devextreme-angular';
+import { PersonComponent } from './components/person/person.component';
+import { SinglesongsComponent } from './components/singlesongs/singlesongs.component';
+import { BeatComponent } from './components/beat/beat.component';
+import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
 
 // ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
 
@@ -31,7 +36,11 @@ import { MessageComponent } from './components/message/message.component';
     UserComponent,
     LoginComponent,
     FavouritesongsComponent,
-    MessageComponent 
+    MessageComponent,
+    PersonComponent,
+    SinglesongsComponent,
+    BeatComponent,
+    SinglebeatComponent 
 
     
   ],
@@ -40,6 +49,12 @@ import { MessageComponent } from './components/message/message.component';
     AppRoutingModule, // diğer link sayfalarına gidebilmek icin
     HttpClientModule, // http methodları için
     FormsModule, 
+    DxSelectBoxModule,
+    DxDataGridModule,
+    DxListModule,
+    DxTextBoxModule,
+    FormsModule,
+    DxDataGridModule,
     StoreModule.forRoot({activeSingleSong:singlesongReducer})
  
   
