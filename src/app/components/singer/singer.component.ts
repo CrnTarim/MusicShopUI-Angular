@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Singer } from '../../models/singer';
+import { Singer, SingerEager } from '../../models/singer';
 import { SingerService } from '../../services/singer.service';
 import { SinglesongService } from '../../services/singlesong.service';
 import { SingleSong } from '../../models/singlesong';
@@ -21,13 +21,16 @@ export class SingerComponent implements OnInit {
   showLegacyList = false;
   showList = false;
 
-  
+  singereager= new SingerEager();
+  singereagers : SingerEager [] = [];
 
+  
   constructor(private singerService: SingerService,private singlesongService:SinglesongService) { }
 
   ngOnInit(): void {
     this.getSingers();
     this.getSingleSong();
+    this.getSingerEagers();
   }
   
   toggleCard(id: string): void {
@@ -41,6 +44,16 @@ export class SingerComponent implements OnInit {
       console.error('Şarkıcıları alırken bir hata oluştu:', error);
     });
 
+    console.log("selam singer bu")
+  }
+
+    getSingerEagers(): void {
+    this.singerService.getSingersEager().subscribe((data: SingerEager[]) => {
+      this.singereagers = data;
+      console.log("singereagr bu", this.singereagers); // ← burada dolu
+    }, error => {
+      console.error('Şarkıcıları alırken bir hata oluştu:', error);
+    });
     console.log("selam singer bu")
   }
 

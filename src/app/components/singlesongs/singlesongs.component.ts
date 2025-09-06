@@ -13,6 +13,7 @@ export class SinglesongsComponent {
   singleSongList: SingleSong[] = [];
   singers: Singer[] = [];             // ← şarkıcı listesi
   form: SingleSong = new SingleSong();
+  selectedSong :SingleSong = new SingleSong();
   saving = false;
   showDelete=false;
   constructor(private singlesongService: SinglesongService) {}
@@ -44,16 +45,17 @@ export class SinglesongsComponent {
 
 fillForm(e: any): void {
 
-  this.form = { ...e.data }; 
+  this.form = e.data;
+  this.selectedSong=e.data;
   this.showDelete=true;
 }
 
 
 deleteSelected(): void {
-  if (!this.form?.id) return;                   // GUID yoksa çık
+  if (!this.selectedSong?.id) return;                   // GUID yoksa çık
 
   this.deleting = true;
-  this.singlesongService.deleteSingleSong(this.form.id).subscribe({
+  this.singlesongService.deleteSingleSong(this.selectedSong.id).subscribe({
     next: () => {
       this.deleting = false;
       this.loadSongs();                          // listeyi yenile

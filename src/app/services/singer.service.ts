@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';  // HttpClient import ediliyor
 import { Observable } from 'rxjs';
-import { Singer } from '../models/singer';
+import { Singer, SingerEager } from '../models/singer';
 
 @Injectable({
   providedIn: 'root'
@@ -24,5 +24,8 @@ export class SingerService {
     return this.http.get<Singer>(`${this.url}/getbyId/${singerId}`);
   }
   
+  getSingersEager(): Observable<SingerEager[]> {
+    return this.http.get<SingerEager[]>(`${this.url}/eager`);
+  }
   
 }

@@ -9,6 +9,5 @@ export class SingerEager{
 
     id?:string;
     name?:string;
-    singleSongEager?: SingleSongEager[];
-
+    singleSongs?: SingleSongEager[];
 }

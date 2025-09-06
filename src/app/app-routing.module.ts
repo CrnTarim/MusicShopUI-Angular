@@ -23,7 +23,7 @@ const routes: Routes = [
   },
   {path:'favourite-songs',component:FavouritesongsComponent},
   {path:'user-profile/:id', component: UserComponent, canActivate: [AuthGuard]},
-  {path: 'message', component: MessageComponent, canActivate: [AuthGuard] },
+  {path:'message', component: MessageComponent, canActivate: [AuthGuard] },
   {path:'favsong',component:FavouritesongsComponent},
   {path:'person',component:PersonComponent},
   {path:'songs',component:SinglesongsComponent},
