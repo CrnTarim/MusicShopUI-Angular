@@ -22,6 +22,7 @@ import { PersonComponent } from './components/person/person.component';
 import { SinglesongsComponent } from './components/singlesongs/singlesongs.component';
 import { BeatComponent } from './components/beat/beat.component';
 import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
+import { ReportComponent } from './components/report/report.component';
 
 // ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
 
@@ -40,7 +41,8 @@ import { SinglebeatComponent } from './components/singlebeat/singlebeat.componen
     PersonComponent,
     SinglesongsComponent,
     BeatComponent,
-    SinglebeatComponent 
+    SinglebeatComponent,
+    ReportComponent 
 
     
   ],
