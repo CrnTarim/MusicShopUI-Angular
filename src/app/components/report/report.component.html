@@ -1,1 +1,133 @@
-<p>report works!</p>
+<div class="wrap">
+
+  <h1>Rapor İstatistikleri</h1>
+  <p>Tarih aralığını seç → “Kaydet” → Satır/Sütun’u seç → (opsiyonel) kriter gir → “Hesapla”.</p>
+
+  <!-- 1) Tarih -->
+  <div class="card">
+    <h3>1) Tarih</h3>
+    <div class="row dates">
+      <div>
+        <label>Başlangıç</label>
+        <input type="date" [(ngModel)]="startDateStr">
+      </div>
+      <div>
+        <label>Bitiş</label>
+        <input type="date" [(ngModel)]="endDateStr">
+      </div>
+      <div class="right">
+        <button (click)="onSaveDate()">Kaydet</button>
+      </div>
+    </div>
+    <div class="hint">Aktif kayıt (tarih filtresi): <b>{{ activeData.length }}</b></div>
+  </div>
+
+  <!-- 2) Boyutlar -->
+  <div class="card">
+    <h3>2) Boyutlar</h3>
+    <div class="row">
+      <div>
+        <div class="label">Satır</div>
+        <div class="pills">
+          <button [class.on]="rowDim==='City'"      (click)="rowDim='City'; run()">Şehir</button>
+          <button [class.on]="rowDim==='Hospital'"  (click)="rowDim='Hospital'; run()">Hastane</button>
+          <button [class.on]="rowDim==='Diagnosis'" (click)="rowDim='Diagnosis'; run()">Tanı</button>
+          <button [class.on]="rowDim==='Report'"    (click)="rowDim='Report'; run()">Rapor</button>
+        </div>
+      </div>
+      <div>
+        <div class="label">Sütun</div>
+        <div class="pills">
+          <button [class.on]="!colDim" (click)="colDim=null; run()">Yok</button>
+          <button [disabled]="rowDim==='City'"      [class.on]="colDim==='City'"      (click)="colDim='City'; run()">Şehir</button>
+          <button [disabled]="rowDim==='Hospital'"  [class.on]="colDim==='Hospital'"  (click)="colDim='Hospital'; run()">Hastane</button>
+          <button [disabled]="rowDim==='Diagnosis'" [class.on]="colDim==='Diagnosis'" (click)="colDim='Diagnosis'; run()">Tanı</button>
+          <button [disabled]="rowDim==='Report'"    [class.on]="colDim==='Report'"    (click)="colDim='Report'; run()">Rapor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3) Kriterler -->
+  <div class="card">
+    <h3>3) Kriterler (opsiyonel – virgülle yaz)</h3>
+    <div class="row">
+      <div>
+        <label>Şehir (ad veya id):</label>
+        <input type="text" placeholder="Ankara, İstanbul veya C101, C134" (change)="onCityChange($event)">
+      </div>
+      <div>
+        <label>Hastane (ad veya id):</label>
+        <input type="text" placeholder="Ankara Şehir Hastanesi, H507" (change)="onHospitalChange($event)">
+      </div>
+      <div>
+        <label>Tanı (ad/kod/id):</label>
+        <input type="text" placeholder="Grip, J11 veya D01" (change)="onDiagnosisChange($event)">
+      </div>
+      <div>
+        <label>Rapor Kod:</label>
+        <input type="text" placeholder="1001, 1010, 1050" (change)="onReportCodeChange($event)">
+      </div>
+    </div>
+    <div class="hint">
+      Seçimler (satır boyutu <b>{{ dimTextMap[rowDim] }}</b> için “Seçilen vs Diğerleri” hesaplanır).
+    </div>
+  </div>
+
+  <!-- 4) Seçilen vs Diğerleri (yalın bar) -->
+  <div class="card" *ngIf="selectedVsOthers.total > 0">
+    <h3>4) Seçilen vs Diğerleri — {{ dimTextMap[rowDim] }}</h3>
+    <div class="svd-bar">
+      <div class="svd-sel" [style.width.%]="selectedVsOthers.pctSel"></div>
+      <div class="svd-oth" [style.width.%]="100 - selectedVsOthers.pctSel"></div>
+    </div>
+    <div class="svd-legend">
+      <div class="svd-item sel">
+        <span class="box"></span>
+        <span>Seçilen</span>
+        <b>{{ selectedVsOthers.selected }}</b>
+      </div>
+      <div class="svd-item oth">
+        <span class="box"></span>
+        <span>Diğerleri</span>
+        <b>{{ selectedVsOthers.others }}</b>
+      </div>
+      <div class="svd-item tot">
+        <span>Toplam</span>
+        <b>{{ selectedVsOthers.total }}</b>
+        <span>(Seçilen %{{ selectedVsOthers.pctSel }})</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5) Hesapla + Sonuç Tablosu -->
+  <div class="card">
+    <h3>5) Sonuçlar</h3>
+    <div class="row">
+      <div><button (click)="run()">Hesapla</button></div>
+      <div>Toplam hücre: <b>{{ totalCount }}</b></div>
+    </div>
+
+    <table class="tbl" *ngIf="rows && rows.length">
+      <thead>
+        <tr>
+          <th>Satır ({{ dimTextMap[rowDim] }})</th>
+          <th *ngIf="colDim">Sütun ({{ dimTextMap[colDim] }})</th>
+          <th>Rapor (distinct)</th>
+          <th>%</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of rows">
+          <td>{{ r.label1 }}</td>
+          <td *ngIf="colDim">{{ r.label2 }}</td>
+          <td>{{ r.count }}</td>
+          <td>{{ r.percent }}%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="rows && !rows.length" class="hint">Sonuç yok. Tarih/kriterleri kontrol edip tekrar deneyin.</div>
+  </div>
+
+</div>

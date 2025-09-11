@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color:#40E0D0;">
   <a class="navbar-brand" href="#">Navbar w/ text</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -20,9 +20,13 @@
       <li class="nav-item">
         <a class="nav-link"  [routerLink]="['/singlebeats']">SingleBeats</a>
       </li>
+        <li class="nav-item">
+        <a class="nav-link"  [routerLink]="['/report']">Report</a>
+      </li>
       <li class="nav-item">
         <a class="nav-link" (click)="goToProfile()">Profile</a>
       </li>
+      
       
       <!-- Eğer localStorage'da userId yoksa Login butonu görünür -->
       <li class="nav-item" *ngIf="!isUserLoggedIn">
