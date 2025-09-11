@@ -54,16 +54,44 @@
     <div class="row">
       <div>
         <label>Şehir (ad veya id):</label>
-        <input type="text" placeholder="Ankara, İstanbul veya C101, C134" (change)="onCityChange($event)">
+        <label>Şehir</label>
+          <dx-tag-box
+            [dataSource]="cities"
+            displayExpr="name"
+            valueExpr="id"
+            [(value)]="selectedCityIds"
+            [showSelectionControls]="true"
+            [searchEnabled]="true"
+            placeholder="Şehir seç...">
+          </dx-tag-box>
+
       </div>
-      <div>
-        <label>Hastane (ad veya id):</label>
-        <input type="text" placeholder="Ankara Şehir Hastanesi, H507" (change)="onHospitalChange($event)">
-      </div>
-      <div>
-        <label>Tanı (ad/kod/id):</label>
-        <input type="text" placeholder="Grip, J11 veya D01" (change)="onDiagnosisChange($event)">
-      </div>
+ <!-- Hastane -->
+    <div class="field">
+      <label>Hastane</label>
+      <dx-tag-box
+        [dataSource]="hospitals"
+        displayExpr="name"
+        valueExpr="id"
+        [(value)]="selectedHospitalIds"
+        [showSelectionControls]="true"
+        [searchEnabled]="true"
+        placeholder="Hastane seç...">
+      </dx-tag-box>
+    </div>
+
+     <div class="field">
+      <label>Tanı</label>
+      <dx-tag-box
+        [dataSource]="diagnoses"
+        displayExpr="name"
+        valueExpr="id"
+        [(value)]="selectedDiagnosisIds"
+        [showSelectionControls]="true"
+        [searchEnabled]="true"
+        placeholder="Tanı seç...">
+      </dx-tag-box>
+    </div>
       <div>
         <label>Rapor Kod:</label>
         <input type="text" placeholder="1001, 1010, 1050" (change)="onReportCodeChange($event)">
@@ -73,6 +101,7 @@
       Seçimler (satır boyutu <b>{{ dimTextMap[rowDim] }}</b> için “Seçilen vs Diğerleri” hesaplanır).
     </div>
   </div>
+  
 
   <!-- 4) Seçilen vs Diğerleri (yalın bar) -->
   <div class="card" *ngIf="selectedVsOthers.total > 0">

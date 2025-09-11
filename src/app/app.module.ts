@@ -64,6 +64,7 @@ import { ReportComponent } from './components/report/report.component';
     DxDataGridModule,
     DxTagBoxModule,
     DxButtonModule,
+    DxPieChartModule,
     DxPieChartModule, 
     StoreModule.forRoot({activeSingleSong:singlesongReducer})
  

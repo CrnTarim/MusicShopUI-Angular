@@ -426,4 +426,17 @@ export class ReportComponent implements OnInit {
     if (d === 'Report') return this.selectedReportCodes.map(function(n){ return '' + n; });
     return [];
   }
+
+  get pieData(): Array<{ name: string; val: number }> {
+  // rowDim ne olursa olsun, “Seçilen vs Diğerleri” barının hesabını kullanıyoruz
+  const s = this.selectedVsOthers;
+  if (!s || !s.total) return [];
+  return [
+    { name: 'Seçilen',   val: s.selected },
+    { name: 'Diğerleri', val: s.others }
+  ];
+}
+
+
+
 }
