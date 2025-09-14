@@ -23,6 +23,7 @@ import { SinglesongsComponent } from './components/singlesongs/singlesongs.compo
 import { BeatComponent } from './components/beat/beat.component';
 import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
 import { ReportComponent } from './components/report/report.component';
+import { ReportgridComponent } from './components/reportgrid/reportgrid.component';
 
 // ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
 
@@ -42,7 +43,8 @@ import { ReportComponent } from './components/report/report.component';
     SinglesongsComponent,
     BeatComponent,
     SinglebeatComponent,
-    ReportComponent ,
+    ReportComponent,
+    ReportgridComponent ,
     
 
     
