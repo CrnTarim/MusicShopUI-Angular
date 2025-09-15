@@ -12,9 +12,19 @@ button{ padding:8px 12px; border-radius:8px; border:1px solid #0ea5a5; backgroun
 button:disabled{ opacity:.5; cursor:default; }
 .hint{ margin-top:8px; color:#64748b; }
 
-.pills{ display:flex; gap:6px; flex-wrap:wrap; }
-.pills button{ background:#fff; color:#0f172a; border:1px solid #94a3b8; }
-.pills button.on{ background:#ecfeff; border-color:#06b6d4; }
+.mt8{ margin-top:8px; }
+
+.pills{
+  display:flex;
+  gap:6px;
+  /* wrap yerine yatay scroll: tek satır, taşma yok */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.pills button{ white-space: nowrap; }
+.pills::-webkit-scrollbar{ height:6px; }
+
 
 .tbl{ width:100%; border-collapse: collapse; margin-top:12px; }
 .tbl th, .tbl td{ border:1px solid #e2e8f0; padding:8px 10px; text-align:left; }

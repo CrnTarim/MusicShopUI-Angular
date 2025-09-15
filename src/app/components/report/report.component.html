@@ -1,7 +1,7 @@
 <div class="wrap">
 
   <h1>Rapor İstatistikleri</h1>
-  <p>Tarih aralığını seç → <b>Getir</b> → Satır/Sütun’u seç → (opsiyonel) kriter gir → “Hesapla”.</p>
+  <p>Tarih aralığını seç → <b>Getir</b> → Satır / Sütun Katmanlarını seç → (opsiyonel) kriter gir → Sonuç.</p>
 
   <!-- 1) Tarih -->
   <div class="card">
@@ -26,6 +26,7 @@
   <div class="card">
     <h3>2) Boyutlar</h3>
     <div class="row">
+      <!-- Satır -->
       <div>
         <div class="label">Satır</div>
         <div class="pills">
@@ -37,16 +38,72 @@
           <button [class.on]="rowDim==='Organization'" (click)="rowDim='Organization'; run()">Kurum</button>
         </div>
       </div>
+
+      <!-- Sütun Katmanları -->
       <div>
-        <div class="label">Sütun</div>
+        <div class="label">Sütun Katman 1</div>
         <div class="pills">
-          <button [class.on]="!colDim" (click)="colDim=null; run()">Yok</button>
-          <button [disabled]="rowDim==='City'"         [class.on]="colDim==='City'"         (click)="colDim='City'; run()">Şehir</button>
-          <button [disabled]="rowDim==='Hospital'"     [class.on]="colDim==='Hospital'"     (click)="colDim='Hospital'; run()">Hastane</button>
-          <button [disabled]="rowDim==='Diagnosis'"    [class.on]="colDim==='Diagnosis'"    (click)="colDim='Diagnosis'; run()">Tanı</button>
-          <button [disabled]="rowDim==='Report'"       [class.on]="colDim==='Report'"       (click)="colDim='Report'; run()">Rapor</button>
-          <button [disabled]="rowDim==='State'"        [class.on]="colDim==='State'"        (click)="colDim='State'; run()">Durum</button>
-          <button [disabled]="rowDim==='Organization'" [class.on]="colDim==='Organization'" (click)="colDim='Organization'; run()">Kurum</button>
+          <button [class.on]="!col1Dim" (click)="setColLayer(1,null)">Yok</button>
+          <button [disabled]="rowDim==='City'"         [class.on]="col1Dim==='City'"         (click)="setColLayer(1,'City')">Şehir</button>
+          <button [disabled]="rowDim==='Hospital'"     [class.on]="col1Dim==='Hospital'"     (click)="setColLayer(1,'Hospital')">Hastane</button>
+          <button [disabled]="rowDim==='Diagnosis'"    [class.on]="col1Dim==='Diagnosis'"    (click)="setColLayer(1,'Diagnosis')">Tanı</button>
+          <button [disabled]="rowDim==='Report'"       [class.on]="col1Dim==='Report'"       (click)="setColLayer(1,'Report')">Rapor</button>
+          <button [disabled]="rowDim==='State'"        [class.on]="col1Dim==='State'"        (click)="setColLayer(1,'State')">Durum</button>
+          <button [disabled]="rowDim==='Organization'" [class.on]="col1Dim==='Organization'" (click)="setColLayer(1,'Organization')">Kurum</button>
+        </div>
+
+        <div class="label mt8">Sütun Katman 2 (opsiyonel)</div>
+        <div class="pills">
+          <button [class.on]="!col2Dim" (click)="setColLayer(2,null)">Yok</button>
+          <button [disabled]="rowDim==='City' || col1Dim==='City'"         [class.on]="col2Dim==='City'"         (click)="setColLayer(2,'City')">Şehir</button>
+          <button [disabled]="rowDim==='Hospital' || col1Dim==='Hospital'" [class.on]="col2Dim==='Hospital'"     (click)="setColLayer(2,'Hospital')">Hastane</button>
+          <button [disabled]="rowDim==='Diagnosis' || col1Dim==='Diagnosis'" [class.on]="col2Dim==='Diagnosis'" (click)="setColLayer(2,'Diagnosis')">Tanı</button>
+          <button [disabled]="rowDim==='Report' || col1Dim==='Report'"     [class.on]="col2Dim==='Report'"       (click)="setColLayer(2,'Report')">Rapor</button>
+          <button [disabled]="rowDim==='State' || col1Dim==='State'"       [class.on]="col2Dim==='State'"        (click)="setColLayer(2,'State')">Durum</button>
+          <button [disabled]="rowDim==='Organization' || col1Dim==='Organization'" [class.on]="col2Dim==='Organization'" (click)="setColLayer(2,'Organization')">Kurum</button>
+        </div>
+
+        <!-- Sütun üyeleri (katman 1) -->
+        <div *ngIf="col1Dim && col1Dim!=='Report'" class="mt8">
+          <label>Sütun Değerleri — Katman 1 ({{ dimTextMap[col1Dim] }})</label>
+          <dx-tag-box
+            [dataSource]="getColMemberDataSource(1)"
+            displayExpr="name"
+            valueExpr="id"
+            [value]="getColMemberValue(1)"
+            [showSelectionControls]="true"
+            [searchEnabled]="true"
+            (onValueChanged)="onColMembersChange($event.value, 1)"
+            placeholder="{{ dimTextMap[col1Dim] }} seç...">
+          </dx-tag-box>
+        </div>
+
+        <!-- Sütun üyeleri (katman 2) -->
+        <div *ngIf="col2Dim && col2Dim!=='Report'" class="mt8">
+          <label>Sütun Değerleri — Katman 2 ({{ dimTextMap[col2Dim] }})</label>
+          <dx-tag-box
+            [dataSource]="getColMemberDataSource(2)"
+            displayExpr="name"
+            valueExpr="id"
+            [value]="getColMemberValue(2)"
+            [showSelectionControls]="true"
+            [searchEnabled]="true"
+            (onValueChanged)="onColMembersChange($event.value, 2)"
+            placeholder="{{ dimTextMap[col2Dim] }} seç...">
+          </dx-tag-box>
+        </div>
+
+        <!-- Kolon görünümü / metrik -->
+        <div *ngIf="col1Dim" class="mt8">
+          <button [class.on]="colOnlySelected" (click)="colOnlySelected=!colOnlySelected; run()">
+            Kolon: {{ colOnlySelected ? 'Sadece seçilenler' : 'Tümü' }}
+          </button>
+          <button [class.on]="showPercents" (click)="showPercents=!showPercents">
+            {{ showPercents ? 'Sadece Sayı' : 'Sayı + %' }}
+          </button>
+          <button [class.on]="!!col1Dim" (click)="togglePivot()">
+            {{ col1Dim ? 'Liste' : 'Pivot' }}
+          </button>
         </div>
       </div>
     </div>
@@ -56,7 +113,6 @@
   <div class="card">
     <h3>3) Kriterler (opsiyonel)</h3>
     <div class="row">
-      <!-- Şehir -->
       <div class="field">
         <label>Şehir</label>
         <dx-tag-box
@@ -66,12 +122,11 @@
           [(value)]="selectedCityIds"
           [showSelectionControls]="true"
           [searchEnabled]="true"
-          (valueChange)="onCitySelectionChange($event)"
+          (onValueChanged)="onCitySelectionChange($event.value)"
           placeholder="Şehir seç...">
         </dx-tag-box>
       </div>
 
-      <!-- Hastane (şehir seçimine göre daralır) -->
       <div class="field">
         <label>Hastane</label>
         <dx-tag-box
@@ -81,27 +136,25 @@
           [(value)]="selectedHospitalIds"
           [showSelectionControls]="true"
           [searchEnabled]="true"
-          (valueChange)="onHospitalSelectionChange($event)"
+          (onValueChanged)="onHospitalSelectionChange($event.value)"
           placeholder="Hastane seç...">
         </dx-tag-box>
       </div>
 
-      <!-- Tanı (seçim sırasını korur) -->
       <div class="field">
         <label>Tanı</label>
         <dx-tag-box
           [dataSource]="diagnoses"
           displayExpr="name"
           valueExpr="id"
-          [(value)]="selectedDiagnosisIds"
+          [value]="selectedDiagnosisIds"
           [showSelectionControls]="true"
           [searchEnabled]="true"
-          (valueChange)="onDiagnosisSelectionChange($event)"
+          (onValueChanged)="onDiagnosisSelectionChange($event.value)"
           placeholder="Tanı seç...">
         </dx-tag-box>
       </div>
 
-      <!-- Kurum -->
       <div class="field">
         <label>Kurum</label>
         <dx-tag-box
@@ -111,12 +164,11 @@
           [(value)]="selectedOrganizationIds"
           [showSelectionControls]="true"
           [searchEnabled]="true"
-          (valueChange)="run()"
+          (onValueChanged)="run()"
           placeholder="Kurum seç...">
         </dx-tag-box>
       </div>
 
-      <!-- Durum -->
       <div class="field">
         <label>Durum</label>
         <dx-tag-box
@@ -130,12 +182,11 @@
           [(value)]="selectedStates"
           [showSelectionControls]="true"
           [searchEnabled]="false"
-          (valueChange)="run()"
+          (onValueChanged)="run()"
           placeholder="Durum seç...">
         </dx-tag-box>
       </div>
 
-      <!-- Rapor Kod -->
       <div class="field">
         <label>Rapor Kod</label>
         <input type="text"
@@ -180,24 +231,9 @@
   <!-- 5) Sonuçlar -->
   <div class="card">
     <h3>5) Sonuçlar</h3>
-    <div class="row">
-      <div class="pills">
-        <button [class.on]="!colDim" (click)="colDim=null; run()">Liste</button>
-        <button [class.on]="!!colDim" (click)="colDim='Diagnosis'; run()">Pivot</button>
-        <button *ngIf="colDim==='Diagnosis'"
-                [class.on]="colOnlySelected"
-                (click)="colOnlySelected=!colOnlySelected; run()">
-          Kolon: {{ colOnlySelected ? 'Sadece seçilenler' : 'Tümü' }}
-        </button>
-        <button *ngIf="colDim" [class.on]="showPercents" (click)="showPercents=!showPercents">
-          {{ showPercents ? 'Sadece Sayı' : 'Sayı + %' }}
-        </button>
-      </div>
-      <div>Toplam: <b>{{ totalCount }}</b></div>
-    </div>
 
-    <!-- A) Tek boyutlu liste -->
-    <table class="tbl" *ngIf="!colDim && rows && rows.length">
+    <!-- Liste -->
+    <table class="tbl" *ngIf="!col1Dim && rows && rows.length">
       <thead>
         <tr>
           <th>Satır ({{ dimTextMap[rowDim] }})</th>
@@ -221,47 +257,56 @@
       </tfoot>
     </table>
 
-    <!-- B) Pivot (iki boyut) -->
-    <div class="pivot-scroll" *ngIf="colDim && pivot">
+    <!-- Pivot -->
+    <div class="pivot-scroll" *ngIf="col1Dim && pivot">
       <table class="tbl">
         <thead>
+          <!-- Üst header: Katman 1 -->
           <tr>
-            <th>Satır ({{ dimTextMap[rowDim] }})</th>
-            <th *ngFor="let ck of pivot.colKeys" class="center">{{ ck }}</th>
-            <th class="center">Toplam</th>
-            <th class="center">Oran</th> <!-- yeni kolon -->
+            <th rowspan="2">Satır ({{ dimTextMap[rowDim] }})</th>
+            <ng-container *ngFor="let k1 of pivot.topKeys; let i = index">
+              <th class="center" [attr.colspan]="pivot.topSpan[i]">{{ k1 }}</th>
+            </ng-container>
+            <th class="center" rowspan="2">Toplam</th>
+            <th class="center" rowspan="2">Oran</th>
+          </tr>
+          <!-- Alt header: Katman 2 veya tek katmanda tekrar -->
+          <tr>
+            <ng-container *ngFor="let leaf of pivot.leafKeys">
+              <th class="center">{{ pivot.hasSecondLevel ? leaf.k2 : leaf.label }}</th>
+            </ng-container>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let rk of pivot.rowKeys; let ri = index">
             <td>{{ rk }}</td>
-            <td *ngFor="let ck of pivot.colKeys; let ci = index" class="center">
+            <td *ngFor="let leaf of pivot.leafKeys; let li = index" class="center">
               <ng-container *ngIf="showPercents; else onlyCount">
-                {{ pivot.counts[ri][ci] }} <span class="muted">({{ pivot.percents[ri][ci] }}%)</span>
+                {{ pivot.counts[ri][li] }} <span class="muted">({{ pivot.percents[ri][li] }}%)</span>
               </ng-container>
               <ng-template #onlyCount>
-                {{ pivot.counts[ri][ci] }}
+                {{ pivot.counts[ri][li] }}
               </ng-template>
             </td>
             <td class="center"><b>{{ pivot.rowTotals[ri] }}</b></td>
-            <td class="center"><b>{{ pivot.rowShare[ri] }}%</b></td> <!-- satır toplamının genel toplam içindeki payı -->
+            <td class="center"><b>{{ pivot.rowShare[ri] }}%</b></td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <th>Genel Toplam</th>
-            <th class="center" *ngFor="let _ of pivot.colKeys"></th>
+            <th class="center" *ngFor="let _ of pivot.leafKeys"></th>
             <th class="center"><b>{{ pivot.grandTotal }}</b></th>
             <th class="center"><b>100%</b></th>
           </tr>
         </tfoot>
       </table>
       <div class="hint" *ngIf="pivot.overflow">
-        Çok fazla sütun var; ilk 20 sütun gösterildi. (Tanı/kolon seçimini daraltabilirsin.)
+        Çok fazla sütun var; ilk {{ pivot.leafKeys.length }} sütun gösterildi. (Sütun seçimlerini daraltabilirsin.)
       </div>
     </div>
 
-    <div *ngIf="(!colDim && rows && !rows.length) || (colDim && (!pivot || !pivot.rowKeys.length))" class="hint">
+    <div *ngIf="(!col1Dim && rows && !rows.length) || (col1Dim && (!pivot || !pivot.rowKeys.length))" class="hint">
       Sonuç yok. Tarih/kriterleri kontrol edip tekrar deneyin.
     </div>
   </div>
