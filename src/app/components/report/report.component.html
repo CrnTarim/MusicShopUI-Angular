@@ -1,7 +1,7 @@
 <div class="wrap">
 
   <h1>Rapor İstatistikleri</h1>
-  <p>Tarih aralığını seç → “Kaydet” → Satır/Sütun’u seç → (opsiyonel) kriter gir → “Hesapla”.</p>
+  <p>Tarih aralığını seç → <b>Getir</b> → Satır/Sütun’u seç → (opsiyonel) kriter gir → “Hesapla”.</p>
 
   <!-- 1) Tarih -->
   <div class="card">
@@ -16,7 +16,7 @@
         <input type="date" [(ngModel)]="endDateStr">
       </div>
       <div class="right">
-        <button (click)="onSaveDate()">Kaydet</button>
+        <button (click)="onSaveDate()">Getir</button>
       </div>
     </div>
     <div class="hint">Aktif kayıt (tarih filtresi): <b>{{ activeData.length }}</b></div>
@@ -29,20 +29,24 @@
       <div>
         <div class="label">Satır</div>
         <div class="pills">
-          <button [class.on]="rowDim==='City'"      (click)="rowDim='City'; run()">Şehir</button>
-          <button [class.on]="rowDim==='Hospital'"  (click)="rowDim='Hospital'; run()">Hastane</button>
-          <button [class.on]="rowDim==='Diagnosis'" (click)="rowDim='Diagnosis'; run()">Tanı</button>
-          <button [class.on]="rowDim==='Report'"    (click)="rowDim='Report'; run()">Rapor</button>
+          <button [class.on]="rowDim==='City'"         (click)="rowDim='City'; run()">Şehir</button>
+          <button [class.on]="rowDim==='Hospital'"     (click)="rowDim='Hospital'; run()">Hastane</button>
+          <button [class.on]="rowDim==='Diagnosis'"    (click)="rowDim='Diagnosis'; run()">Tanı</button>
+          <button [class.on]="rowDim==='Report'"       (click)="rowDim='Report'; run()">Rapor</button>
+          <button [class.on]="rowDim==='State'"        (click)="rowDim='State'; run()">Durum</button>
+          <button [class.on]="rowDim==='Organization'" (click)="rowDim='Organization'; run()">Kurum</button>
         </div>
       </div>
       <div>
         <div class="label">Sütun</div>
         <div class="pills">
           <button [class.on]="!colDim" (click)="colDim=null; run()">Yok</button>
-          <button [disabled]="rowDim==='City'"      [class.on]="colDim==='City'"      (click)="colDim='City'; run()">Şehir</button>
-          <button [disabled]="rowDim==='Hospital'"  [class.on]="colDim==='Hospital'"  (click)="colDim='Hospital'; run()">Hastane</button>
-          <button [disabled]="rowDim==='Diagnosis'" [class.on]="colDim==='Diagnosis'" (click)="colDim='Diagnosis'; run()">Tanı</button>
-          <button [disabled]="rowDim==='Report'"    [class.on]="colDim==='Report'"    (click)="colDim='Report'; run()">Rapor</button>
+          <button [disabled]="rowDim==='City'"         [class.on]="colDim==='City'"         (click)="colDim='City'; run()">Şehir</button>
+          <button [disabled]="rowDim==='Hospital'"     [class.on]="colDim==='Hospital'"     (click)="colDim='Hospital'; run()">Hastane</button>
+          <button [disabled]="rowDim==='Diagnosis'"    [class.on]="colDim==='Diagnosis'"    (click)="colDim='Diagnosis'; run()">Tanı</button>
+          <button [disabled]="rowDim==='Report'"       [class.on]="colDim==='Report'"       (click)="colDim='Report'; run()">Rapor</button>
+          <button [disabled]="rowDim==='State'"        [class.on]="colDim==='State'"        (click)="colDim='State'; run()">Durum</button>
+          <button [disabled]="rowDim==='Organization'" [class.on]="colDim==='Organization'" (click)="colDim='Organization'; run()">Kurum</button>
         </div>
       </div>
     </div>
@@ -50,60 +54,104 @@
 
   <!-- 3) Kriterler -->
   <div class="card">
-    <h3>3) Kriterler (opsiyonel – virgülle yaz)</h3>
+    <h3>3) Kriterler (opsiyonel)</h3>
     <div class="row">
-      <div>
-        <label>Şehir (ad veya id):</label>
+      <!-- Şehir -->
+      <div class="field">
         <label>Şehir</label>
-          <dx-tag-box
-            [dataSource]="cities"
-            displayExpr="name"
-            valueExpr="id"
-            [(value)]="selectedCityIds"
-            [showSelectionControls]="true"
-            [searchEnabled]="true"
-            placeholder="Şehir seç...">
-          </dx-tag-box>
-
+        <dx-tag-box
+          [dataSource]="cities"
+          displayExpr="name"
+          valueExpr="id"
+          [(value)]="selectedCityIds"
+          [showSelectionControls]="true"
+          [searchEnabled]="true"
+          (valueChange)="onCitySelectionChange($event)"
+          placeholder="Şehir seç...">
+        </dx-tag-box>
       </div>
- <!-- Hastane -->
-    <div class="field">
-      <label>Hastane</label>
-      <dx-tag-box
-        [dataSource]="hospitals"
-        displayExpr="name"
-        valueExpr="id"
-        [(value)]="selectedHospitalIds"
-        [showSelectionControls]="true"
-        [searchEnabled]="true"
-        placeholder="Hastane seç...">
-      </dx-tag-box>
-    </div>
 
-     <div class="field">
-      <label>Tanı</label>
-      <dx-tag-box
-        [dataSource]="diagnoses"
-        displayExpr="name"
-        valueExpr="id"
-        [(value)]="selectedDiagnosisIds"
-        [showSelectionControls]="true"
-        [searchEnabled]="true"
-        placeholder="Tanı seç...">
-      </dx-tag-box>
-    </div>
-      <div>
-        <label>Rapor Kod:</label>
-        <input type="text" placeholder="1001, 1010, 1050" (change)="onReportCodeChange($event)">
+      <!-- Hastane (şehir seçimine göre daralır) -->
+      <div class="field">
+        <label>Hastane</label>
+        <dx-tag-box
+          [dataSource]="hospitalsFiltered"
+          displayExpr="name"
+          valueExpr="id"
+          [(value)]="selectedHospitalIds"
+          [showSelectionControls]="true"
+          [searchEnabled]="true"
+          (valueChange)="onHospitalSelectionChange($event)"
+          placeholder="Hastane seç...">
+        </dx-tag-box>
+      </div>
+
+      <!-- Tanı (seçim sırasını korur) -->
+      <div class="field">
+        <label>Tanı</label>
+        <dx-tag-box
+          [dataSource]="diagnoses"
+          displayExpr="name"
+          valueExpr="id"
+          [(value)]="selectedDiagnosisIds"
+          [showSelectionControls]="true"
+          [searchEnabled]="true"
+          (valueChange)="onDiagnosisSelectionChange($event)"
+          placeholder="Tanı seç...">
+        </dx-tag-box>
+      </div>
+
+      <!-- Kurum -->
+      <div class="field">
+        <label>Kurum</label>
+        <dx-tag-box
+          [dataSource]="organizations"
+          displayExpr="name"
+          valueExpr="id"
+          [(value)]="selectedOrganizationIds"
+          [showSelectionControls]="true"
+          [searchEnabled]="true"
+          (valueChange)="run()"
+          placeholder="Kurum seç...">
+        </dx-tag-box>
+      </div>
+
+      <!-- Durum -->
+      <div class="field">
+        <label>Durum</label>
+        <dx-tag-box
+          [dataSource]="[
+            { id: 1, name: 'Onay' },
+            { id: 2, name: 'Açıklama' },
+            { id: 3, name: 'Manuel Açıklama' }
+          ]"
+          displayExpr="name"
+          valueExpr="id"
+          [(value)]="selectedStates"
+          [showSelectionControls]="true"
+          [searchEnabled]="false"
+          (valueChange)="run()"
+          placeholder="Durum seç...">
+        </dx-tag-box>
+      </div>
+
+      <!-- Rapor Kod -->
+      <div class="field">
+        <label>Rapor Kod</label>
+        <input type="text"
+               placeholder="20250010 20250120"
+               [ngModel]="reportCodeCsv"
+               (ngModelChange)="reportCodeCsv=$event; onReportCodeChange($event)"
+               inputmode="numeric">
       </div>
     </div>
+
     <div class="hint">
       Seçimler (satır boyutu <b>{{ dimTextMap[rowDim] }}</b> için “Seçilen vs Diğerleri” hesaplanır).
     </div>
   </div>
-  
 
-  <!-- 4) Seçilen vs Diğerleri (yalın bar) -->
+  <!-- 4) Seçilen vs Diğerleri -->
   <div class="card" *ngIf="selectedVsOthers.total > 0">
     <h3>4) Seçilen vs Diğerleri — {{ dimTextMap[rowDim] }}</h3>
     <div class="svd-bar">
@@ -129,19 +177,30 @@
     </div>
   </div>
 
-  <!-- 5) Hesapla + Sonuç Tablosu -->
+  <!-- 5) Sonuçlar -->
   <div class="card">
     <h3>5) Sonuçlar</h3>
     <div class="row">
-      <div><button (click)="run()">Hesapla</button></div>
-      <div>Toplam hücre: <b>{{ totalCount }}</b></div>
+      <div class="pills">
+        <button [class.on]="!colDim" (click)="colDim=null; run()">Liste</button>
+        <button [class.on]="!!colDim" (click)="colDim='Diagnosis'; run()">Pivot</button>
+        <button *ngIf="colDim==='Diagnosis'"
+                [class.on]="colOnlySelected"
+                (click)="colOnlySelected=!colOnlySelected; run()">
+          Kolon: {{ colOnlySelected ? 'Sadece seçilenler' : 'Tümü' }}
+        </button>
+        <button *ngIf="colDim" [class.on]="showPercents" (click)="showPercents=!showPercents">
+          {{ showPercents ? 'Sadece Sayı' : 'Sayı + %' }}
+        </button>
+      </div>
+      <div>Toplam: <b>{{ totalCount }}</b></div>
     </div>
 
-    <table class="tbl" *ngIf="rows && rows.length">
+    <!-- A) Tek boyutlu liste -->
+    <table class="tbl" *ngIf="!colDim && rows && rows.length">
       <thead>
         <tr>
           <th>Satır ({{ dimTextMap[rowDim] }})</th>
-          <th *ngIf="colDim">Sütun ({{ dimTextMap[colDim] }})</th>
           <th>Rapor (distinct)</th>
           <th>%</th>
         </tr>
@@ -149,14 +208,62 @@
       <tbody>
         <tr *ngFor="let r of rows">
           <td>{{ r.label1 }}</td>
-          <td *ngIf="colDim">{{ r.label2 }}</td>
           <td>{{ r.count }}</td>
           <td>{{ r.percent }}%</td>
         </tr>
       </tbody>
+      <tfoot>
+        <tr>
+          <th>Genel Toplam</th>
+          <th>{{ totalCount }}</th>
+          <th>100%</th>
+        </tr>
+      </tfoot>
     </table>
 
-    <div *ngIf="rows && !rows.length" class="hint">Sonuç yok. Tarih/kriterleri kontrol edip tekrar deneyin.</div>
+    <!-- B) Pivot (iki boyut) -->
+    <div class="pivot-scroll" *ngIf="colDim && pivot">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Satır ({{ dimTextMap[rowDim] }})</th>
+            <th *ngFor="let ck of pivot.colKeys" class="center">{{ ck }}</th>
+            <th class="center">Toplam</th>
+            <th class="center">Oran</th> <!-- yeni kolon -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rk of pivot.rowKeys; let ri = index">
+            <td>{{ rk }}</td>
+            <td *ngFor="let ck of pivot.colKeys; let ci = index" class="center">
+              <ng-container *ngIf="showPercents; else onlyCount">
+                {{ pivot.counts[ri][ci] }} <span class="muted">({{ pivot.percents[ri][ci] }}%)</span>
+              </ng-container>
+              <ng-template #onlyCount>
+                {{ pivot.counts[ri][ci] }}
+              </ng-template>
+            </td>
+            <td class="center"><b>{{ pivot.rowTotals[ri] }}</b></td>
+            <td class="center"><b>{{ pivot.rowShare[ri] }}%</b></td> <!-- satır toplamının genel toplam içindeki payı -->
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th>Genel Toplam</th>
+            <th class="center" *ngFor="let _ of pivot.colKeys"></th>
+            <th class="center"><b>{{ pivot.grandTotal }}</b></th>
+            <th class="center"><b>100%</b></th>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="hint" *ngIf="pivot.overflow">
+        Çok fazla sütun var; ilk 20 sütun gösterildi. (Tanı/kolon seçimini daraltabilirsin.)
+      </div>
+    </div>
+
+    <div *ngIf="(!colDim && rows && !rows.length) || (colDim && (!pivot || !pivot.rowKeys.length))" class="hint">
+      Sonuç yok. Tarih/kriterleri kontrol edip tekrar deneyin.
+    </div>
   </div>
 
 </div>

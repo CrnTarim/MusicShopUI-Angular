@@ -19,6 +19,8 @@ button:disabled{ opacity:.5; cursor:default; }
 .tbl{ width:100%; border-collapse: collapse; margin-top:12px; }
 .tbl th, .tbl td{ border:1px solid #e2e8f0; padding:8px 10px; text-align:left; }
 .tbl thead th{ background:#f8fafc; }
+.tbl .center{ text-align:center; }
+.muted{ color:#64748b; font-size: 12px; }
 
 /* Seçilen vs Diğerleri barı */
 .svd-bar{
@@ -37,3 +39,6 @@ button:disabled{ opacity:.5; cursor:default; }
 .svd-item .box{ width:12px; height:12px; border-radius:3px; display:inline-block; }
 .svd-item.sel .box{ background:#14b8a6; }
 .svd-item.oth .box{ background:#94a3b8; }
+
+/* Pivot genişliği için yatay scroll */
+.pivot-scroll{ overflow:auto; }
