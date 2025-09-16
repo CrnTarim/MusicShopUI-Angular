@@ -43,8 +43,9 @@ interface FactReport {
 
 /* UI kontrolleri */
 type RowMode      = 'City' | 'Hospital' | 'CityHospital';
-type CriteriaType = 'None' | 'Diagnosis' | 'ReportState';
+type CriteriaType = 'None' | 'Diagnosis' | 'ReportState' | 'DiagAndState';
 type PercentBasis = 'row' | 'column' | 'grand';
+type ColHierarchy = 'DiagThenState' | 'StateThenDiag';
 
 @Component({
   selector: 'app-report',
@@ -60,7 +61,8 @@ export class ReportComponent implements OnInit {
   /* ---- Eksen/Kriter ---- */
   rowMode: RowMode = 'CityHospital';
   criteriaType: CriteriaType = 'Diagnosis';
-  percentBasis: PercentBasis = 'row'; // % Satır varsayılan
+  percentBasis: PercentBasis = 'row';           // % Satır varsayılan
+  colHierarchy: ColHierarchy = 'DiagThenState'; // Tanı → Durum varsayılan
 
   /* ---- Slicer panelleri (başlangıçta kapalı) ---- */
   openRowSlicers = false;
@@ -224,6 +226,13 @@ export class ReportComponent implements OnInit {
     return out;
   }
 
+  /* ====== Hastane listesi (UI) — şehir seçimine göre daraltılır ====== */
+  hospitalsForUI(): Hosp[] {
+    if (!this.selectedCityIds.length) return this.hospitals;
+    const s = new Set(this.selectedCityIds);
+    return this.hospitals.filter(h => s.has(h.cityId));
+  }
+
   /* ====== Tarih ====== */
   private pad2(n: number){ return n<10 ? '0'+n : ''+n; }
   private toInputDate(d: Date){ return d.getFullYear() + '-' + this.pad2(d.getMonth()+1) + '-' + this.pad2(d.getDate()); }
@@ -249,7 +258,7 @@ export class ReportComponent implements OnInit {
   }
 
   /* ====== checkbox helpers ====== */
-  isSelected(arr: string[] | Array<'Onay'|'Açıklama'|'Manuel Açıklama'>, id: any){ return arr.indexOf(id) !== -1; }
+  isSelected(arr: any[], id: any){ return arr.indexOf(id) !== -1; }
   private toggleIn<T>(arr: T[], v: T): T[] {
     const i = arr.indexOf(v);
     return i >= 0 ? arr.filter(x => x !== v) : arr.concat(v);
@@ -271,6 +280,7 @@ export class ReportComponent implements OnInit {
     this.updatePivot();
   }
   setPercent(b: PercentBasis){ this.percentBasis = b; this.updatePivot(); }
+  setColHierarchy(h: ColHierarchy){ this.colHierarchy = h; this.updatePivot(); }
 
   /* ====== Pivot alanları ====== */
   private buildFields(): any[] {
@@ -291,6 +301,14 @@ export class ReportComponent implements OnInit {
       fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
     } else if (this.criteriaType === 'ReportState') {
       fields.push({ dataField: 'reportstate', caption: 'Rapor Durumu', area: 'column' });
+    } else if (this.criteriaType === 'DiagAndState') {
+      if (this.colHierarchy === 'DiagThenState') {
+        fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
+        fields.push({ dataField: 'reportstate',  caption: 'Rapor Durumu', area: 'column' });
+      } else {
+        fields.push({ dataField: 'reportstate',  caption: 'Rapor Durumu', area: 'column' });
+        fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
+      }
     }
 
     // DATA (count + %)

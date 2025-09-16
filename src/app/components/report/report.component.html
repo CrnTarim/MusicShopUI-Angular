@@ -41,6 +41,14 @@
           <button [class.on]="criteriaType==='None'" (click)="setCriteriaType('None')">Yok</button>
           <button [class.on]="criteriaType==='Diagnosis'" (click)="setCriteriaType('Diagnosis')">Tanı</button>
           <button [class.on]="criteriaType==='ReportState'" (click)="setCriteriaType('ReportState')">Rapor Durumu</button>
+          <button [class.on]="criteriaType==='DiagAndState'" (click)="setCriteriaType('DiagAndState')">Tanı + Durum</button>
+        </div>
+
+        <!-- Kombine kolon hiyerarşi -->
+        <div class="pills" *ngIf="criteriaType==='DiagAndState'" style="margin-top:6px">
+          <span style="align-self:center;margin-right:6px">Hiyerarşi:</span>
+          <button [class.on]="colHierarchy==='DiagThenState'" (click)="setColHierarchy('DiagThenState')">Tanı → Durum</button>
+          <button [class.on]="colHierarchy==='StateThenDiag'" (click)="setColHierarchy('StateThenDiag')">Durum → Tanı</button>
         </div>
       </div>
 
@@ -77,12 +85,12 @@
           </div>
         </div>
 
-        <!-- Hastane -->
+        <!-- Hastane (şehir seçimine göre daralır) -->
         <div>
           <div class="label">Hastane</div>
           <div class="multi">
             <div class="options">
-              <label *ngFor="let h of hospitals">
+              <label *ngFor="let h of hospitalsForUI()">
                 <input type="checkbox"
                        [checked]="isSelected(selectedHospitalIds, h.id)"
                        (change)="toggleHospital(h.id)">
