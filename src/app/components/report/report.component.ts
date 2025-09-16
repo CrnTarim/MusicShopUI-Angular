@@ -1,22 +1,22 @@
 import { Component, OnInit } from '@angular/core';
+import PivotGridDataSource from 'devextreme/ui/pivot_grid/data_source';
 
-/* ========= Şema tipleri ========= */
 type Guid = string;
 
+/* ===== Orijinal tablolar ===== */
 interface City   { id: Guid; code: number; name: string; }
 interface Hosp   { id: Guid; code: number; name: string; cityId: Guid; }
 interface Provision { id: Guid; code: string; hospitalId: Guid; }
 
 interface Report {
   id: Guid;
-  reportstate: string;     // 'Onay' | 'Açıklama' | 'Manuel Açıklama'
+  reportstate: 'Onay' | 'Açıklama' | 'Manuel Açıklama';
   provisionId: Guid;
-  approveuserId?: Guid;
   createdAt: Date;
   reportCode: number;
 }
 
-interface Diagnosis   { id: Guid; code: string; name: string; }
+interface Diagnosis   { id: Guid; code: string;  name: string; }
 
 interface ReportDiagnosis {
   id: Guid;
@@ -26,56 +26,25 @@ interface ReportDiagnosis {
   diagnosisName: string;
 }
 
-/* ========= Görünüm satırı ========= */
-interface ReportRow {
+/* ===== Pivot'a giden TEK TABLO ===== */
+interface FactReport {
   reportId: string;
   reportCode: number;
-
-  cityId: string;      cityName: string;
-  hospitalId: string;  hospitalName: string;
-
-  diagnosisId: string; diagnosisName: string;
-
-  reportstate: string;
   reportCreated: Date;
+  reportstate: 'Onay' | 'Açıklama' | 'Manuel Açıklama';
+
+  cityId: string;      cityCode: number;      cityName: string;
+  hospitalId: string;  hospitalCode: number;  hospitalName: string;
+
+  provisionId: string; provisionCode: string;
+
+  diagnosisId: string; diagnosisCode: string; diagnosisName: string;
 }
 
-/* ========= Sonuç modelleri ========= */
-type RowMode = 'City' | 'Hospital' | 'CityHospital';
+/* UI kontrolleri */
+type RowMode      = 'City' | 'Hospital' | 'CityHospital';
 type CriteriaType = 'None' | 'Diagnosis' | 'ReportState';
-
-interface ListRow {
-  label: string;
-  count: number;
-  percent: number;
-}
-
-interface Pivot {
-  rowKeys: string[];
-  colKeys: string[];
-  counts: number[][];
-  percents: number[][];
-  rowTotals: number[];
-  grandTotal: number;
-  rowShare: number[];
-}
-
-/* Şehir → Hastane görünümü için “rowspan” kullanacak satırlar */
-interface PivotCHRow {
-  city: string;
-  showCity: boolean;
-  cityRowspan: number;
-  hospital: string;
-  counts: number[];
-  percents: number[];
-  total: number;
-  share: number;
-}
-interface PivotCH {
-  colKeys: string[];
-  displayRows: PivotCHRow[];
-  grandTotal: number; // tüm hastane (leaf) toplamı
-}
+type PercentBasis = 'row' | 'column' | 'grand';
 
 @Component({
   selector: 'app-report',
@@ -84,59 +53,64 @@ interface PivotCH {
 })
 export class ReportComponent implements OnInit {
 
-  /* ---------- Tarih ---------- */
+  /* ---- Tarih ---- */
   startDateStr = '';
   endDateStr   = '';
 
-  /* ---------- Eksenler ---------- */
-  rowMode: RowMode = 'CityHospital';       // Şehir, Hastane, veya Şehir→Hastane
+  /* ---- Eksen/Kriter ---- */
+  rowMode: RowMode = 'CityHospital';
   criteriaType: CriteriaType = 'Diagnosis';
+  percentBasis: PercentBasis = 'row'; // % Satır varsayılan
 
-  /* ---------- Kolon kontrolü ---------- */
-  colOnlySelected = true;
+  /* ---- Slicer panelleri (başlangıçta kapalı) ---- */
+  openRowSlicers = false;
+  openColSlicers = false;
 
-  /* ---------- Lookuplar ---------- */
+  /* ---- Lookuplar ---- */
   cities: City[] = [];
   hospitals: Hosp[] = [];
   diagnoses: Diagnosis[] = [];
 
-  /* ---------- Seçimler ---------- */
+  /* ---- Slicers ---- */
   selectedCityIds: string[] = [];
   selectedHospitalIds: string[] = [];
   selectedDiagnosisIds: string[] = [];
-  selectedStates: string[] = []; // 'Onay' | 'Açıklama' | 'Manuel Açıklama'
+  selectedStates: Array<'Onay'|'Açıklama'|'Manuel Açıklama'> = [];
 
-  /* ---------- Arama kutuları ---------- */
-  cityQ = '';
-  hospitalQ = '';
-  diagQ = '';
+  /* ---- Data ---- */
+  private factAll: FactReport[] = [];
+  factActive: FactReport[] = [];
 
-  /* ---------- Veri ---------- */
-  private allRows: ReportRow[] = [];
-  activeRows: ReportRow[] = [];
+  /* ---- Pivot DS ---- */
+  pivotDs: any = null;
 
-  /* ---------- Sonuç ---------- */
-  listRows: ListRow[] = [];
-  pivot: Pivot | null = null;     // City/Hospital modları için
-  pivotCH: PivotCH | null = null; // CityHospital (rowspan) için
-  totalCount = 0;
+  /* isim map’leri (filter için isim lazım) */
+  private cityById = new Map<string, City>();
+  private hospById = new Map<string, Hosp>();
+  private diagById = new Map<string, Diagnosis>();
 
-  /* ====================== Lifecycle ====================== */
+  /* ========== Lifecycle ========== */
   ngOnInit(): void {
     const mock = this.generateMock(42);
-    this.cities = mock.cities;
+
+    this.cities    = mock.cities;
     this.hospitals = mock.hospitals;
     this.diagnoses = mock.diagnoses;
 
-    this.allRows = this.buildRows(
+    this.cityById = new Map(this.cities.map(c => [c.id, c] as [string, City]));
+    this.hospById = new Map(this.hospitals.map(h => [h.id, h] as [string, Hosp]));
+    this.diagById = new Map(this.diagnoses.map(d => [d.id, d] as [string, Diagnosis]));
+
+    // tüm tabloyu tek “FactReport” haline getir
+    this.factAll = this.buildFactTable(
       mock.cities, mock.hospitals, mock.provisions,
-      mock.reports, mock.reportDiagnoses
+      mock.reports, mock.diagnoses, mock.reportDiagnoses
     );
 
     this.initDefaultDates();
   }
 
-  /* ====================== Mock ====================== */
+  /* ========== Mock ========== */
   private seed = 42;
   private rnd(): number { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 0x100000000; }
   private pick<T>(arr: T[]): T { return arr[Math.floor(this.rnd() * arr.length)]!; }
@@ -155,12 +129,12 @@ export class ReportComponent implements OnInit {
     const types = ['GATA','Şehir Hastanesi','Acıbadem','Askeri Hastane','Şehir Hastanesi 2'];
     const hospitals: Hosp[] = [];
     let hc = 500;
-    for (let c of cities) for (let k=0;k<5;k++){
+    for (const c of cities) for (let k=0;k<5;k++){
       hospitals.push({ id:this.guid('H-'), code:hc++, name:`${c.name} ${types[k]}`, cityId:c.id });
     }
 
     const provisions: Provision[] = [];
-    for (let h of hospitals) for (let i=1;i<=15;i++){
+    for (const h of hospitals) for (let i=1;i<=15;i++){
       provisions.push({ id:this.guid('PRV-'), code:`PRV-${h.code}-${i.toString().padStart(4,'0')}`, hospitalId:h.id });
     }
 
@@ -177,9 +151,9 @@ export class ReportComponent implements OnInit {
     const reportDiagnoses: ReportDiagnosis[] = [];
 
     const provByHospital: {[hid:string]: Provision[]} = {};
-    for (let p of provisions){ (provByHospital[p.hospitalId]||(provByHospital[p.hospitalId]=[])).push(p); }
+    for (const p of provisions){ (provByHospital[p.hospitalId]||(provByHospital[p.hospitalId]=[])).push(p); }
 
-    for (let h of hospitals){
+    for (const h of hospitals){
       const provs = provByHospital[h.id];
       for (let i=0;i<15;i++){
         const p = provs[i];
@@ -188,7 +162,7 @@ export class ReportComponent implements OnInit {
         createdAt.setHours(8 + this.between(0,9), this.between(0,59), 0, 0);
 
         const r = this.rnd();
-        const state = r < 0.55 ? 'Onay' : (r < 0.80 ? 'Açıklama' : 'Manuel Açıklama');
+        const state: Report['reportstate'] = r < 0.55 ? 'Onay' : (r < 0.80 ? 'Açıklama' : 'Manuel Açıklama');
 
         const report: Report = {
           id: this.guid('RPT-'),
@@ -199,6 +173,7 @@ export class ReportComponent implements OnInit {
         };
         reports.push(report);
 
+        // rapor başına tek tanı
         const d = this.pick(diagnoses);
         reportDiagnoses.push({
           id: this.guid('RDX-'),
@@ -213,37 +188,43 @@ export class ReportComponent implements OnInit {
     return { cities, hospitals, provisions, reports, diagnoses, reportDiagnoses };
   }
 
-  private buildRows(
-    cities: City[], hospitals: Hosp[],
-    provisions: Provision[], reports: Report[],
-    rdx: ReportDiagnosis[]
-  ): ReportRow[] {
-    const cityById: {[id:string]: City} = {}; for (let c of cities) cityById[c.id] = c;
-    const hospById: {[id:string]: Hosp} = {}; for (let h of hospitals) hospById[h.id] = h;
-    const provById: {[id:string]: Provision} = {}; for (let p of provisions) provById[p.id] = p;
+  /* ====== tabloları tek tabloya birleştir ====== */
+  private buildFactTable(
+    cities: City[], hospitals: Hosp[], provisions: Provision[],
+    reports: Report[], diagnoses: Diagnosis[], rdx: ReportDiagnosis[]
+  ): FactReport[] {
 
-    const diagByReportId: {[rid:string]: ReportDiagnosis} = {}; for (let x of rdx) diagByReportId[x.reportId] = x;
+    const cityById: {[id:string]: City} = {}; for (const c of cities) cityById[c.id] = c;
+    const hospById: {[id:string]: Hosp} = {}; for (const h of hospitals) hospById[h.id] = h;
+    const provById: {[id:string]: Provision} = {}; for (const p of provisions) provById[p.id] = p;
+    const diagByReportId: {[rid:string]: ReportDiagnosis} = {}; for (const x of rdx) diagByReportId[x.reportId] = x;
 
-    const out: ReportRow[] = [];
-    for (let r of reports){
+    const out: FactReport[] = [];
+    for (const r of reports){
       const p = provById[r.provisionId];
       const h = hospById[p.hospitalId];
       const c = cityById[h.cityId];
       const d = diagByReportId[r.id];
+      const diag = diagnoses.find(xx => xx.id === d.diagnosisId)!;
+
       out.push({
         reportId: r.id,
         reportCode: r.reportCode,
-        cityId: c.id, cityName: c.name,
-        hospitalId: h.id, hospitalName: h.name,
-        diagnosisId: d.diagnosisId, diagnosisName: d.diagnosisName,
+        reportCreated: r.createdAt,
         reportstate: r.reportstate,
-        reportCreated: r.createdAt
+
+        cityId: c.id,      cityCode: c.code,      cityName: c.name,
+        hospitalId: h.id,  hospitalCode: h.code,  hospitalName: h.name,
+
+        provisionId: p.id, provisionCode: p.code,
+
+        diagnosisId: d.diagnosisId, diagnosisCode: diag.code, diagnosisName: d.diagnosisName
       });
     }
     return out;
   }
 
-  /* ====================== Tarih & Getir ====================== */
+  /* ====== Tarih ====== */
   private pad2(n: number){ return n<10 ? '0'+n : ''+n; }
   private toInputDate(d: Date){ return d.getFullYear() + '-' + this.pad2(d.getMonth()+1) + '-' + this.pad2(d.getDate()); }
   private parseStart(s: string){ const a=s.split('-'); return new Date(+a[0], +a[1]-1, +a[2], 0,0,0,0); }
@@ -255,232 +236,129 @@ export class ReportComponent implements OnInit {
   }
 
   onFetch(): void {
-    if (!this.startDateStr || !this.endDateStr){
-      this.activeRows=[]; this.listRows=[]; this.pivot=null; this.pivotCH=null; this.totalCount=0; return;
-    }
+    if (!this.startDateStr || !this.endDateStr){ this.factActive=[]; this.pivotDs=null; return; }
     const s = this.parseStart(this.startDateStr).getTime();
     const e = this.parseEnd(this.endDateStr).getTime();
 
-    let rows = this.allRows.filter(r => {
+    this.factActive = this.factAll.filter(r => {
       const t = r.reportCreated.getTime();
       return t>=s && t<=e;
     });
 
-    if (this.selectedCityIds.length){
-      const set = new Set(this.selectedCityIds);
-      rows = rows.filter(r => set.has(r.cityId));
-    }
-    if (this.selectedHospitalIds.length){
-      const set = new Set(this.selectedHospitalIds);
-      rows = rows.filter(r => set.has(r.hospitalId));
-    }
-
-    this.activeRows = rows;
-    this.run();
+    this.updatePivot();
   }
 
-  /* ====================== Checkbox çoklu seçim ====================== */
-  isSelected(arr: string[], id: string){ return arr.indexOf(id) !== -1; }
-  private toggleIn(arr: string[], id: string): string[] {
-    const i = arr.indexOf(id);
-    return i >= 0 ? arr.filter(x => x !== id) : arr.concat(id);
+  /* ====== checkbox helpers ====== */
+  isSelected(arr: string[] | Array<'Onay'|'Açıklama'|'Manuel Açıklama'>, id: any){ return arr.indexOf(id) !== -1; }
+  private toggleIn<T>(arr: T[], v: T): T[] {
+    const i = arr.indexOf(v);
+    return i >= 0 ? arr.filter(x => x !== v) : arr.concat(v);
   }
-  toggleCity(id: string){
-    this.selectedCityIds = this.toggleIn(this.selectedCityIds, id);
-    if (this.selectedCityIds.length){
-      const allowed = new Set(this.hospitals.filter(h => this.selectedCityIds.indexOf(h.cityId)!==-1).map(h => h.id));
-      this.selectedHospitalIds = this.selectedHospitalIds.filter(hid => allowed.has(hid));
-    }
-    this.run();
+  toggleCity(id: string){ this.selectedCityIds = this.toggleIn(this.selectedCityIds, id); this.applyFilters(); }
+  toggleHospital(id: string){ this.selectedHospitalIds = this.toggleIn(this.selectedHospitalIds, id); this.applyFilters(); }
+  toggleDiagnosis(id: string){ this.selectedDiagnosisIds = this.toggleIn(this.selectedDiagnosisIds, id); this.applyFilters(); }
+  toggleState(name: 'Onay'|'Açıklama'|'Manuel Açıklama'){ this.selectedStates = this.toggleIn(this.selectedStates, name); this.applyFilters(); }
+
+  /* ====== Eksen/Kriter/% + panel açma ====== */
+  setRowMode(m: RowMode){
+    this.rowMode = m;
+    this.openRowSlicers = true;   // Satır panelini otomatik aç
+    this.updatePivot();
   }
-  toggleHospital(id: string){ this.selectedHospitalIds = this.toggleIn(this.selectedHospitalIds, id); this.run(); }
-  toggleDiagnosis(id: string){ this.selectedDiagnosisIds = this.toggleIn(this.selectedDiagnosisIds, id); this.run(); }
-  toggleState(name: string){ this.selectedStates = this.toggleIn(this.selectedStates, name); this.run(); }
-
-  /* ====================== Liste filtreleri (arama) ====================== */
-  get citiesShown(): City[] {
-    const q = this.cityQ.trim().toLowerCase();
-    return q ? this.cities.filter(c => c.name.toLowerCase().includes(q)) : this.cities;
+  setCriteriaType(c: CriteriaType){
+    this.criteriaType = c;
+    this.openColSlicers = true;   // Sütun panelini otomatik aç
+    this.updatePivot();
   }
-  get hospitalsShown(): Hosp[] {
-    const q = this.hospitalQ.trim().toLowerCase();
-    let list = this.hospitals;
-    if (this.selectedCityIds.length){
-      const s = new Set(this.selectedCityIds);
-      list = list.filter(h => s.has(h.cityId));
-    }
-    return q ? list.filter(h => h.name.toLowerCase().includes(q)) : list;
-  }
-  get diagnosesShown(): Diagnosis[] {
-    const q = this.diagQ.trim().toLowerCase();
-    return q ? this.diagnoses.filter(d => d.name.toLowerCase().includes(q)) : this.diagnoses;
-  }
+  setPercent(b: PercentBasis){ this.percentBasis = b; this.updatePivot(); }
 
-  /* ====================== Yardımcı etiketler ====================== */
-  private labelRegionSimple(r: ReportRow): string {
-    return this.rowMode === 'Hospital' ? r.hospitalName : r.cityName;
-  }
-  private labelCriteria(r: ReportRow): string {
-    return this.criteriaType === 'Diagnosis' ? r.diagnosisName : r.reportstate;
-  }
+  /* ====== Pivot alanları ====== */
+  private buildFields(): any[] {
+    const fields: any[] = [];
 
-  /* ====================== Hesap ====================== */
-  run(): void {
-    const data = this.activeRows;
-
-    if (!data.length){
-      this.listRows=[]; this.pivot=null; this.pivotCH=null; this.totalCount=0; return;
+    // ROW
+    if (this.rowMode === 'City') {
+      fields.push({ dataField: 'cityName', caption: 'Şehir', area: 'row' });
+    } else if (this.rowMode === 'Hospital') {
+      fields.push({ dataField: 'hospitalName', caption: 'Hastane', area: 'row' });
+    } else {
+      fields.push({ dataField: 'cityName', caption: 'Şehir', area: 'row' });
+      fields.push({ dataField: 'hospitalName', caption: 'Hastane', area: 'row' });
     }
 
-    /* --- Kriter yoksa tek boyutlu liste --- */
-    if (this.criteriaType === 'None'){
-      const map: {[k:string]: {[rid:string]: true}} = {};
-      for (let i=0;i<data.length;i++){
-        const rk = this.labelRegionSimple(data[i]);
-        (map[rk]||(map[rk]={}))[data[i].reportId] = true;
-      }
-      const out: ListRow[] = [];
-      let grand = 0;
-      for (const k in map){
-        const cnt = Object.keys(map[k]).length;
-        grand += cnt;
-        out.push({ label:k, count:cnt, percent: 0 });
-      }
-      for (let i=0;i<out.length;i++){
-        out[i].percent = grand ? Math.round(10000 * out[i].count / grand) / 100 : 0;
-      }
-      out.sort((a,b)=> (b.count - a.count) || a.label.localeCompare(b.label,'tr'));
-      this.listRows = out; this.pivot=null; this.pivotCH=null; this.totalCount = grand;
-      return;
+    // COLUMN
+    if (this.criteriaType === 'Diagnosis') {
+      fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
+    } else if (this.criteriaType === 'ReportState') {
+      fields.push({ dataField: 'reportstate', caption: 'Rapor Durumu', area: 'column' });
     }
 
-    /* --- Kriter var: kolon anahtarlarını hazırla --- */
-    const colSet: {[k:string]: true} = {};
-    for (let i=0;i<data.length;i++){
-      colSet[this.labelCriteria(data[i])] = true;
-    }
-    let colKeys = Object.keys(colSet).sort((a,b)=>a.localeCompare(b,'tr'));
-    if (this.colOnlySelected){
-      if (this.criteriaType === 'Diagnosis' && this.selectedDiagnosisIds.length){
-        const m: {[id:string]: string} = {}; for (let d of this.diagnoses) m[d.id]=d.name;
-        const picked = this.selectedDiagnosisIds.map(id => m[id]).filter(Boolean);
-        if (picked.length) colKeys = picked;
-      }
-      if (this.criteriaType === 'ReportState' && this.selectedStates.length){
-        colKeys = this.selectedStates.slice(0);
-      }
-    }
+    // DATA (count + %)
+    fields.push({
+      caption: 'Rapor (count)',
+      area: 'data',
+      dataField: 'reportId',
+      summaryType: 'count'
+    });
 
-    if (this.rowMode === 'CityHospital') {
-      this.pivot = null;
-      this.pivotCH = this.computePivotCityHospital(data, colKeys);
-      this.totalCount = this.pivotCH.grandTotal;
-      this.listRows = [];
-      return;
-    }
+    const modeMap: {[k in PercentBasis]: 'percentOfRowTotal'|'percentOfColumnTotal'|'percentOfGrandTotal'} = {
+      row: 'percentOfRowTotal',
+      column: 'percentOfColumnTotal',
+      grand: 'percentOfGrandTotal'
+    };
 
-    // Basit pivot: Şehir ya da Hastane
-    const rowSet: {[k:string]: true} = {};
-    const cell: {[rk:string]: {[ck:string]: {[rid:string]: true}}} = {};
-    for (let i=0;i<data.length;i++){
-      const r = data[i];
-      const rk = this.labelRegionSimple(r);
-      const ck = this.labelCriteria(r);
-      rowSet[rk] = true;
-      (cell[rk]||(cell[rk]={}))[ck] = cell[rk][ck] || {};
-      cell[rk][ck][r.reportId] = true;
-    }
+    fields.push({
+      caption: 'Oran',
+      area: 'data',
+      dataField: 'reportId',
+      summaryType: 'count',
+      summaryDisplayMode: modeMap[this.percentBasis],
+      format: { type: 'percent', precision: 2 }
+    });
 
-    const rowKeys = Object.keys(rowSet).sort((a,b)=>a.localeCompare(b,'tr'));
-    const counts: number[][] = [];
-    const percents: number[][] = [];
-    const rowTotals: number[] = [];
-
-    for (let ri=0; ri<rowKeys.length; ri++){
-      const rk = rowKeys[ri];
-      let total = 0;
-      const rowCounts: number[] = [];
-      for (let ci=0; ci<colKeys.length; ci++){
-        const ck = colKeys[ci];
-        const bucket = cell[rk] && cell[rk][ck];
-        const cnt = bucket ? Object.keys(bucket).length : 0;
-        rowCounts.push(cnt);
-        total += cnt;
-      }
-      rowTotals.push(total);
-      counts.push(rowCounts);
-      const rowPcts = rowCounts.map(c => total ? Math.round(10000 * c / total) / 100 : 0);
-      percents.push(rowPcts);
-    }
-
-    const grandTotal = rowTotals.reduce((s,n)=>s+n,0);
-    const rowShare = rowTotals.map(t => grandTotal ? Math.round(10000 * t / grandTotal) / 100 : 0);
-
-    this.pivot = { rowKeys, colKeys, counts, percents, rowTotals, grandTotal, rowShare };
-    this.pivotCH = null;
-    this.totalCount = grandTotal;
-    this.listRows = [];
+    return fields;
   }
 
-  /* === Şehir → Hastane (rowspan) pivot hesap === */
-  private computePivotCityHospital(data: ReportRow[], colKeys: string[]): PivotCH {
-    // gruplar
-    const hospitalsByCity: {[city:string]: string[]} = {};
-    const countsByHospital: {[hosp:string]: {[ck:string]: number}} = {};
+  private updatePivot(): void {
+    if (!this.factActive.length) { this.pivotDs = null; return; }
+    const fields = this.buildFields();
 
-    for (let i=0;i<data.length;i++){
-      const r = data[i];
-      const city = r.cityName;
-      const hosp = r.hospitalName;
-      const ck   = this.labelCriteria(r);
+    this.pivotDs = new PivotGridDataSource({
+      fields,
+      store: this.factActive
+    });
 
-      (hospitalsByCity[city]||(hospitalsByCity[city]=[]));
-      if (hospitalsByCity[city].indexOf(hosp)===-1) hospitalsByCity[city].push(hosp);
+    // DS hazırlandıktan sonra filtreleri bind et
+    setTimeout(() => this.applyFilters());
+  }
 
-      (countsByHospital[hosp]||(countsByHospital[hosp]={}));
-      countsByHospital[hosp][ck] = (countsByHospital[hosp][ck]||0) + 1;
-    }
+  private applyFilters(): void {
+    if (!this.pivotDs) return;
 
-    // sıralama
-    const cityNames = Object.keys(hospitalsByCity).sort((a,b)=>a.localeCompare(b,'tr'));
-    for (const c of cityNames) hospitalsByCity[c].sort((a,b)=>a.localeCompare(b,'tr'));
+    const names = <T extends {id:string; name:string}>(ids: string[], map: Map<string,T>) =>
+      ids.map(id => map.get(id)).filter(Boolean).map(x => (x as T).name);
 
-    // önce tüm hastane toplamlarını hesapla, grandTotal bul
-    const hospitalTotals: {[hosp:string]: number} = {};
-    let grandTotal = 0;
-    for (const c of cityNames){
-      for (const h of hospitalsByCity[c]){
-        const rowCounts = colKeys.map(ck => countsByHospital[h]?.[ck] || 0);
-        const tot = rowCounts.reduce((s,n)=>s+n,0);
-        hospitalTotals[h] = tot;
-        grandTotal += tot;
-      }
-    }
+    const cityNames = names(this.selectedCityIds, this.cityById);
+    const hospNames = names(this.selectedHospitalIds, this.hospById);
+    const diagNames = names(this.selectedDiagnosisIds, this.diagById);
 
-    const displayRows: PivotCHRow[] = [];
-    for (const city of cityNames){
-      const hosps = hospitalsByCity[city];
-      const rowspan = Math.max(1, hosps.length);
-      for (let idx=0; idx<hosps.length; idx++){
-        const h = hosps[idx];
-        const rowCounts = colKeys.map(ck => countsByHospital[h]?.[ck] || 0);
-        const total = hospitalTotals[h] || 0;
-        const rowPercs = rowCounts.map(c => total ? Math.round(10000 * c / total) / 100 : 0);
-        const share = grandTotal ? Math.round(10000 * total / grandTotal) / 100 : 0;
+    this.pivotDs.field('cityName', {
+      filterType: cityNames.length ? 'include' : undefined,
+      filterValues: cityNames.length ? cityNames : undefined
+    });
+    this.pivotDs.field('hospitalName', {
+      filterType: hospNames.length ? 'include' : undefined,
+      filterValues: hospNames.length ? hospNames : undefined
+    });
+    this.pivotDs.field('diagnosisName', {
+      filterType: diagNames.length ? 'include' : undefined,
+      filterValues: diagNames.length ? diagNames : undefined
+    });
+    this.pivotDs.field('reportstate', {
+      filterType: this.selectedStates.length ? 'include' : undefined,
+      filterValues: this.selectedStates.length ? this.selectedStates : undefined
+    });
 
-        displayRows.push({
-          city,
-          showCity: idx === 0,
-          cityRowspan: rowspan,
-          hospital: h,
-          counts: rowCounts,
-          percents: rowPercs,
-          total,
-          share
-        });
-      }
-    }
-
-    return { colKeys, displayRows, grandTotal };
+    this.pivotDs.reload();
   }
 }
