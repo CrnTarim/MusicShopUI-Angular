@@ -30,3 +30,5 @@ button:disabled{ opacity:.5; cursor:default; }
 .options{ max-height:220px; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; padding:6px; }
 .options label{ display:flex; align-items:center; gap:8px; padding:4px 2px; cursor:pointer; }
 .options label:hover{ background:#f8fafc; }
+/* ... mevcut CSS'in sonuna ekle ... */
+.lvl1 { padding-left: 24px; } /* hiyerarşide hastane satırlarını içerden göster */
