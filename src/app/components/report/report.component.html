@@ -1,7 +1,5 @@
 <div class="wrap">
-
-  <h1>Rapor İstatistikleri</h1>
-  <p>Tarih aralığını seç → <b>Getir</b> → Satır / Sütun Katmanlarını seç → (opsiyonel) kriter gir → Sonuç.</p>
+  <h1>Rapor İstatistikleri — (Tarih → Bölge → Kriter)</h1>
 
   <!-- 1) Tarih -->
   <div class="card">
@@ -16,277 +14,148 @@
         <input type="date" [(ngModel)]="endDateStr">
       </div>
       <div class="right">
-        <button (click)="onSaveDate()">Getir</button>
+        <button (click)="onFetch()">Hesapla</button>
       </div>
     </div>
-    <div class="hint">Aktif kayıt (tarih filtresi): <b>{{ activeData.length }}</b></div>
+    <div class="hint">Aktif kayıt: <b>{{ activeRows.length }}</b></div>
   </div>
 
-  <!-- 2) Boyutlar -->
+  <!-- 2) Bölge & Kriter -->
   <div class="card">
-    <h3>2) Boyutlar</h3>
+    <h3>2) Bölge ve Kriter</h3>
     <div class="row">
-      <!-- Satır -->
       <div>
-        <div class="label">Satır</div>
+        <div class="label">Bölge (Satır)</div>
         <div class="pills">
-          <button [class.on]="rowDim==='City'"         (click)="rowDim='City'; run()">Şehir</button>
-          <button [class.on]="rowDim==='Hospital'"     (click)="rowDim='Hospital'; run()">Hastane</button>
-          <button [class.on]="rowDim==='Diagnosis'"    (click)="rowDim='Diagnosis'; run()">Tanı</button>
-          <button [class.on]="rowDim==='Report'"       (click)="rowDim='Report'; run()">Rapor</button>
-          <button [class.on]="rowDim==='State'"        (click)="rowDim='State'; run()">Durum</button>
-          <button [class.on]="rowDim==='Organization'" (click)="rowDim='Organization'; run()">Kurum</button>
+          <button [class.on]="regionLevel==='City'" (click)="regionLevel='City'; run()">Şehir</button>
+          <button [class.on]="regionLevel==='Hospital'" (click)="regionLevel='Hospital'; run()">Hastane</button>
         </div>
       </div>
 
-      <!-- Sütun Katmanları -->
       <div>
-        <div class="label">Sütun Katman 1</div>
+        <div class="label">Kriter (Sütun)</div>
         <div class="pills">
-          <button [class.on]="!col1Dim" (click)="setColLayer(1,null)">Yok</button>
-          <button [disabled]="rowDim==='City'"         [class.on]="col1Dim==='City'"         (click)="setColLayer(1,'City')">Şehir</button>
-          <button [disabled]="rowDim==='Hospital'"     [class.on]="col1Dim==='Hospital'"     (click)="setColLayer(1,'Hospital')">Hastane</button>
-          <button [disabled]="rowDim==='Diagnosis'"    [class.on]="col1Dim==='Diagnosis'"    (click)="setColLayer(1,'Diagnosis')">Tanı</button>
-          <button [disabled]="rowDim==='Report'"       [class.on]="col1Dim==='Report'"       (click)="setColLayer(1,'Report')">Rapor</button>
-          <button [disabled]="rowDim==='State'"        [class.on]="col1Dim==='State'"        (click)="setColLayer(1,'State')">Durum</button>
-          <button [disabled]="rowDim==='Organization'" [class.on]="col1Dim==='Organization'" (click)="setColLayer(1,'Organization')">Kurum</button>
+          <button [class.on]="criteriaType==='None'" (click)="criteriaType='None'; run()">Yok</button>
+          <button [class.on]="criteriaType==='Diagnosis'" (click)="criteriaType='Diagnosis'; run()">Tanı</button>
+          <button [class.on]="criteriaType==='ReportState'" (click)="criteriaType='ReportState'; run()">Rapor Durumu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kriter üyeleri (opsiyonel) -->
+    <div class="row mt8" *ngIf="criteriaType!=='None'">
+      <div>
+        <div class="label">Kolon Üyeleri ({{ criteriaType==='Diagnosis' ? 'Tanı' : 'Rapor Durumu' }})</div>
+
+        <!-- Tanı (checkbox çoklu + arama) -->
+        <div *ngIf="criteriaType==='Diagnosis'" class="multi">
+          <input class="filter" type="text" placeholder="Tanı ara..." [(ngModel)]="diagQ">
+          <div class="options">
+            <label *ngFor="let d of diagnosesShown">
+              <input type="checkbox"
+                     [checked]="isSelected(selectedDiagnosisIds, d.id)"
+                     (change)="toggleDiagnosis(d.id)">
+              <span>{{ d.name }}</span>
+            </label>
+          </div>
         </div>
 
-        <div class="label mt8">Sütun Katman 2 (opsiyonel)</div>
-        <div class="pills">
-          <button [class.on]="!col2Dim" (click)="setColLayer(2,null)">Yok</button>
-          <button [disabled]="rowDim==='City' || col1Dim==='City'"         [class.on]="col2Dim==='City'"         (click)="setColLayer(2,'City')">Şehir</button>
-          <button [disabled]="rowDim==='Hospital' || col1Dim==='Hospital'" [class.on]="col2Dim==='Hospital'"     (click)="setColLayer(2,'Hospital')">Hastane</button>
-          <button [disabled]="rowDim==='Diagnosis' || col1Dim==='Diagnosis'" [class.on]="col2Dim==='Diagnosis'" (click)="setColLayer(2,'Diagnosis')">Tanı</button>
-          <button [disabled]="rowDim==='Report' || col1Dim==='Report'"     [class.on]="col2Dim==='Report'"       (click)="setColLayer(2,'Report')">Rapor</button>
-          <button [disabled]="rowDim==='State' || col1Dim==='State'"       [class.on]="col2Dim==='State'"        (click)="setColLayer(2,'State')">Durum</button>
-          <button [disabled]="rowDim==='Organization' || col1Dim==='Organization'" [class.on]="col2Dim==='Organization'" (click)="setColLayer(2,'Organization')">Kurum</button>
+        <!-- Rapor Durumu (checkbox çoklu) -->
+        <div *ngIf="criteriaType==='ReportState'" class="options">
+          <label><input type="checkbox" [checked]="isSelected(selectedStates,'Onay')" (change)="toggleState('Onay')"> Onay</label>
+          <label><input type="checkbox" [checked]="isSelected(selectedStates,'Açıklama')" (change)="toggleState('Açıklama')"> Açıklama</label>
+          <label><input type="checkbox" [checked]="isSelected(selectedStates,'Manuel Açıklama')" (change)="toggleState('Manuel Açıklama')"> Manuel Açıklama</label>
         </div>
 
-        <!-- Sütun üyeleri (katman 1) -->
-        <div *ngIf="col1Dim && col1Dim!=='Report'" class="mt8">
-          <label>Sütun Değerleri — Katman 1 ({{ dimTextMap[col1Dim] }})</label>
-          <dx-tag-box
-            [dataSource]="getColMemberDataSource(1)"
-            displayExpr="name"
-            valueExpr="id"
-            [value]="getColMemberValue(1)"
-            [showSelectionControls]="true"
-            [searchEnabled]="true"
-            (onValueChanged)="onColMembersChange($event.value, 1)"
-            placeholder="{{ dimTextMap[col1Dim] }} seç...">
-          </dx-tag-box>
-        </div>
-
-        <!-- Sütun üyeleri (katman 2) -->
-        <div *ngIf="col2Dim && col2Dim!=='Report'" class="mt8">
-          <label>Sütun Değerleri — Katman 2 ({{ dimTextMap[col2Dim] }})</label>
-          <dx-tag-box
-            [dataSource]="getColMemberDataSource(2)"
-            displayExpr="name"
-            valueExpr="id"
-            [value]="getColMemberValue(2)"
-            [showSelectionControls]="true"
-            [searchEnabled]="true"
-            (onValueChanged)="onColMembersChange($event.value, 2)"
-            placeholder="{{ dimTextMap[col2Dim] }} seç...">
-          </dx-tag-box>
-        </div>
-
-        <!-- Kolon görünümü / metrik -->
-        <div *ngIf="col1Dim" class="mt8">
+        <div class="mt8">
           <button [class.on]="colOnlySelected" (click)="colOnlySelected=!colOnlySelected; run()">
             Kolon: {{ colOnlySelected ? 'Sadece seçilenler' : 'Tümü' }}
           </button>
-          <button [class.on]="showPercents" (click)="showPercents=!showPercents">
-            {{ showPercents ? 'Sadece Sayı' : 'Sayı + %' }}
-          </button>
-          <button [class.on]="!!col1Dim" (click)="togglePivot()">
-            {{ col1Dim ? 'Liste' : 'Pivot' }}
-          </button>
         </div>
       </div>
+
+      <!-- Slicer: Şehir/Hastane (checkbox çoklu + arama) -->
+      <div>
+        <div class="label">Slicer — Şehir</div>
+        <div class="multi">
+          <input class="filter" type="text" placeholder="Şehir ara..." [(ngModel)]="cityQ">
+          <div class="options">
+            <label *ngFor="let c of citiesShown">
+              <input type="checkbox"
+                     [checked]="isSelected(selectedCityIds, c.id)"
+                     (change)="toggleCity(c.id)">
+              <span>{{ c.name }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">Slicer — Hastane</div>
+        <div class="multi">
+          <input class="filter" type="text" placeholder="Hastane ara..." [(ngModel)]="hospitalQ">
+          <div class="options">
+            <label *ngFor="let h of hospitalsShown">
+              <input type="checkbox"
+                     [checked]="isSelected(selectedHospitalIds, h.id)"
+                     (change)="toggleHospital(h.id)">
+              <span>{{ h.name }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="hint">Not: Şehir seçersen hastane listesi otomatik daralır.</div>
+      </div>
     </div>
   </div>
 
-  <!-- 3) Kriterler -->
+  <!-- 3) Sonuçlar -->
   <div class="card">
-    <h3>3) Kriterler (opsiyonel)</h3>
-    <div class="row">
-      <div class="field">
-        <label>Şehir</label>
-        <dx-tag-box
-          [dataSource]="cities"
-          displayExpr="name"
-          valueExpr="id"
-          [(value)]="selectedCityIds"
-          [showSelectionControls]="true"
-          [searchEnabled]="true"
-          (onValueChanged)="onCitySelectionChange($event.value)"
-          placeholder="Şehir seç...">
-        </dx-tag-box>
-      </div>
+    <h3>3) Sonuçlar</h3>
 
-      <div class="field">
-        <label>Hastane</label>
-        <dx-tag-box
-          [dataSource]="hospitalsFiltered"
-          displayExpr="name"
-          valueExpr="id"
-          [(value)]="selectedHospitalIds"
-          [showSelectionControls]="true"
-          [searchEnabled]="true"
-          (onValueChanged)="onHospitalSelectionChange($event.value)"
-          placeholder="Hastane seç...">
-        </dx-tag-box>
-      </div>
+    <div *ngIf="!activeRows.length" class="hint">Tarih seçip <b>Hesapla</b>’ya basın.</div>
 
-      <div class="field">
-        <label>Tanı</label>
-        <dx-tag-box
-          [dataSource]="diagnoses"
-          displayExpr="name"
-          valueExpr="id"
-          [value]="selectedDiagnosisIds"
-          [showSelectionControls]="true"
-          [searchEnabled]="true"
-          (onValueChanged)="onDiagnosisSelectionChange($event.value)"
-          placeholder="Tanı seç...">
-        </dx-tag-box>
-      </div>
-
-      <div class="field">
-        <label>Kurum</label>
-        <dx-tag-box
-          [dataSource]="organizations"
-          displayExpr="name"
-          valueExpr="id"
-          [(value)]="selectedOrganizationIds"
-          [showSelectionControls]="true"
-          [searchEnabled]="true"
-          (onValueChanged)="run()"
-          placeholder="Kurum seç...">
-        </dx-tag-box>
-      </div>
-
-      <div class="field">
-        <label>Durum</label>
-        <dx-tag-box
-          [dataSource]="[
-            { id: 1, name: 'Onay' },
-            { id: 2, name: 'Açıklama' },
-            { id: 3, name: 'Manuel Açıklama' }
-          ]"
-          displayExpr="name"
-          valueExpr="id"
-          [(value)]="selectedStates"
-          [showSelectionControls]="true"
-          [searchEnabled]="false"
-          (onValueChanged)="run()"
-          placeholder="Durum seç...">
-        </dx-tag-box>
-      </div>
-
-      <div class="field">
-        <label>Rapor Kod</label>
-        <input type="text"
-               placeholder="20250010 20250120"
-               [ngModel]="reportCodeCsv"
-               (ngModelChange)="reportCodeCsv=$event; onReportCodeChange($event)"
-               inputmode="numeric">
-      </div>
-    </div>
-
-    <div class="hint">
-      Seçimler (satır boyutu <b>{{ dimTextMap[rowDim] }}</b> için “Seçilen vs Diğerleri” hesaplanır).
-    </div>
-  </div>
-
-  <!-- 4) Seçilen vs Diğerleri -->
-  <div class="card" *ngIf="selectedVsOthers.total > 0">
-    <h3>4) Seçilen vs Diğerleri — {{ dimTextMap[rowDim] }}</h3>
-    <div class="svd-bar">
-      <div class="svd-sel" [style.width.%]="selectedVsOthers.pctSel"></div>
-      <div class="svd-oth" [style.width.%]="100 - selectedVsOthers.pctSel"></div>
-    </div>
-    <div class="svd-legend">
-      <div class="svd-item sel">
-        <span class="box"></span>
-        <span>Seçilen</span>
-        <b>{{ selectedVsOthers.selected }}</b>
-      </div>
-      <div class="svd-item oth">
-        <span class="box"></span>
-        <span>Diğerleri</span>
-        <b>{{ selectedVsOthers.others }}</b>
-      </div>
-      <div class="svd-item tot">
-        <span>Toplam</span>
-        <b>{{ selectedVsOthers.total }}</b>
-        <span>(Seçilen %{{ selectedVsOthers.pctSel }})</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5) Sonuçlar -->
-  <div class="card">
-    <h3>5) Sonuçlar</h3>
-
-    <!-- Liste -->
-    <table class="tbl" *ngIf="!col1Dim && rows && rows.length">
+    <!-- A) Kriter yoksa: tek boyutlu liste -->
+    <table class="tbl" *ngIf="activeRows.length && criteriaType==='None'">
       <thead>
         <tr>
-          <th>Satır ({{ dimTextMap[rowDim] }})</th>
+          <th>Satır ({{ regionLevel==='Hospital' ? 'Hastane' : 'Şehir' }})</th>
           <th>Rapor (distinct)</th>
           <th>%</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let r of rows">
-          <td>{{ r.label1 }}</td>
-          <td>{{ r.count }}</td>
-          <td>{{ r.percent }}%</td>
+        <tr *ngFor="let r of listRows">
+          <td>{{ r.label }}</td>
+          <td class="center">{{ r.count }}</td>
+          <td class="center">{{ r.percent }}%</td>
         </tr>
       </tbody>
       <tfoot>
         <tr>
           <th>Genel Toplam</th>
-          <th>{{ totalCount }}</th>
-          <th>100%</th>
+          <th class="center">{{ totalCount }}</th>
+          <th class="center">100%</th>
         </tr>
       </tfoot>
     </table>
 
-    <!-- Pivot -->
-    <div class="pivot-scroll" *ngIf="col1Dim && pivot">
+    <!-- B) Kriter varsa: pivot -->
+    <div class="pivot-scroll" *ngIf="activeRows.length && criteriaType!=='None' && pivot">
       <table class="tbl">
         <thead>
-          <!-- Üst header: Katman 1 -->
           <tr>
-            <th rowspan="2">Satır ({{ dimTextMap[rowDim] }})</th>
-            <ng-container *ngFor="let k1 of pivot.topKeys; let i = index">
-              <th class="center" [attr.colspan]="pivot.topSpan[i]">{{ k1 }}</th>
-            </ng-container>
-            <th class="center" rowspan="2">Toplam</th>
-            <th class="center" rowspan="2">Oran</th>
-          </tr>
-          <!-- Alt header: Katman 2 veya tek katmanda tekrar -->
-          <tr>
-            <ng-container *ngFor="let leaf of pivot.leafKeys">
-              <th class="center">{{ pivot.hasSecondLevel ? leaf.k2 : leaf.label }}</th>
-            </ng-container>
+            <th>Satır ({{ regionLevel==='Hospital' ? 'Hastane' : 'Şehir' }})</th>
+            <th *ngFor="let ck of pivot.colKeys" class="center">{{ ck }}</th>
+            <th class="center">Toplam</th>
+            <th class="center">Oran</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let rk of pivot.rowKeys; let ri = index">
             <td>{{ rk }}</td>
-            <td *ngFor="let leaf of pivot.leafKeys; let li = index" class="center">
-              <ng-container *ngIf="showPercents; else onlyCount">
-                {{ pivot.counts[ri][li] }} <span class="muted">({{ pivot.percents[ri][li] }}%)</span>
-              </ng-container>
-              <ng-template #onlyCount>
-                {{ pivot.counts[ri][li] }}
-              </ng-template>
+            <td *ngFor="let ck of pivot.colKeys; let ci = index" class="center">
+              {{ pivot.counts[ri][ci] }}
+              <span class="muted">({{ pivot.percents[ri][ci] }}%)</span>
             </td>
             <td class="center"><b>{{ pivot.rowTotals[ri] }}</b></td>
             <td class="center"><b>{{ pivot.rowShare[ri] }}%</b></td>
@@ -295,20 +164,13 @@
         <tfoot>
           <tr>
             <th>Genel Toplam</th>
-            <th class="center" *ngFor="let _ of pivot.leafKeys"></th>
-            <th class="center"><b>{{ pivot.grandTotal }}</b></th>
+            <th class="center" *ngFor="let _ of pivot.colKeys"></th>
+            <th class="center"><b>{{ totalCount }}</b></th>
             <th class="center"><b>100%</b></th>
           </tr>
         </tfoot>
       </table>
-      <div class="hint" *ngIf="pivot.overflow">
-        Çok fazla sütun var; ilk {{ pivot.leafKeys.length }} sütun gösterildi. (Sütun seçimlerini daraltabilirsin.)
-      </div>
     </div>
 
-    <div *ngIf="(!col1Dim && rows && !rows.length) || (col1Dim && (!pivot || !pivot.rowKeys.length))" class="hint">
-      Sonuç yok. Tarih/kriterleri kontrol edip tekrar deneyin.
-    </div>
   </div>
-
 </div>
