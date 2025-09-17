@@ -24,6 +24,7 @@ import { BeatComponent } from './components/beat/beat.component';
 import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
 import { ReportComponent } from './components/report/report.component';
 import { ReportgridComponent } from './components/reportgrid/reportgrid.component';
+import { LinechartComponent } from './components/linechart/linechart.component';
 
 // ng g pipe/singerSearch dedigimiz icin otomatik olusturuldu
 
@@ -44,7 +45,8 @@ import { ReportgridComponent } from './components/reportgrid/reportgrid.componen
     BeatComponent,
     SinglebeatComponent,
     ReportComponent,
-    ReportgridComponent ,
+    ReportgridComponent,
+    LinechartComponent ,
     
 
     

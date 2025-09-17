@@ -14,6 +14,7 @@ import { BeatComponent } from './components/beat/beat.component';
 import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
 import { ReportComponent } from './components/report/report.component';
 import { ReportgridComponent } from './components/reportgrid/reportgrid.component';
+import { LinechartComponent } from './components/linechart/linechart.component';
 
 const routes: Routes = [
   {path:'singer-list',component:SingerComponent},
@@ -32,7 +33,8 @@ const routes: Routes = [
   {path:'beats',component:BeatComponent},
   {path:'singlebeats',component:SinglebeatComponent},
   {path:'report',component:ReportComponent},
-  {path:'reportgrid',component:ReportgridComponent}
+  {path:'reportgrid',component:ReportgridComponent},
+  {path:'statistic',component:LinechartComponent}
   
 ];
 
