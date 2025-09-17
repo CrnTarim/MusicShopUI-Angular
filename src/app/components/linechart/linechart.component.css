@@ -20,20 +20,16 @@ h3{ margin:0; line-height:1; }
 /* gridler */
 .row{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; align-items:start; }
 
-/* — Tarih satırı: buton + aktif kayıt hizası düzeltildi — */
+/* — Tarih satırı: buton + aktif kayıt hizası — */
 .dates{
   grid-template-columns: 1fr 1fr auto;
-  align-items: end;              /* inputlar ve sağ sütun tabana yaslanır */
+  align-items: end;
 }
-
-/* sağ sütun: buton üstte, aktif kayıt altta ve sağa hizalı */
 .right{
   text-align:right;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  justify-content:flex-end;
-  gap:6px;                       /* buton ile yazı arası boşluk */
+  display:flex; flex-direction:column;
+  align-items:flex-end; justify-content:flex-end;
+  gap:6px;
 }
 
 /* formlar */
@@ -56,9 +52,7 @@ button.on{ background:#ecfeff; color:#0f172a; border-color:#06b6d4; }
 .sub-label{ font-weight:600; margin:4px 0 6px; color:#0f172a; }
 
 /* iki kolonlu filtre alanı */
-.inline-grid{
-  display:grid; grid-template-columns: 1fr 1fr; gap:12px;
-}
+.inline-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
 
 /* filtre başlığı (aç/kapa) */
 .section-toggle{
@@ -74,9 +68,7 @@ button.on{ background:#ecfeff; color:#0f172a; border-color:#06b6d4; }
   overflow:hidden; max-height:0; opacity:0;
   transition: max-height .25s ease, opacity .2s ease, margin-top .2s ease;
 }
-.collapsible.open{
-  max-height:700px; opacity:1; margin-top:6px;
-}
+.collapsible.open{ max-height:700px; opacity:1; margin-top:6px; }
 
 /* liste kutuları */
 .multi{ border:1px solid #e2e8f0; border-radius:8px; padding:8px; max-height:220px; overflow:auto; }

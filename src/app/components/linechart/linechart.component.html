@@ -17,7 +17,7 @@
         <input type="date" [(ngModel)]="endDateStr">
       </div>
 
-      <!-- Sağ sütun: buton + aktif kayıt (aynı sütunda, alta hizalı) -->
+      <!-- Sağ sütun: buton + aktif kayıt -->
       <div class="right">
         <button (click)="onFetch()">Hesapla</button>
         <div class="hint inline">Aktif kayıt: <b>{{ factActive.length }}</b></div>
@@ -25,7 +25,7 @@
     </div>
   </div>
 
-  <!-- 2) Eksen & Kriter (tek sütun akış) -->
+  <!-- 2) Eksen & Kriter -->
   <div class="card section">
     <div class="section-headline">
       <div class="badge">2</div><h3> Eksen ve Kriter</h3>
@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <!-- Bölge filtreleri (AÇ/KAPA) -->
+    <!-- Bölge filtreleri -->
     <div class="block">
       <div class="section-toggle" (click)="toggleRegionFilters()">
         <span>Bölge Filtreleri</span>
@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <!-- Kriter filtreleri (AÇ/KAPA) -->
+    <!-- Kriter filtreleri -->
     <div class="block">
       <div class="section-toggle" (click)="toggleCriteriaFilters()">
         <span>Kriter Filtreleri</span>
@@ -138,7 +138,7 @@
       </div>
     </div>
 
-    <!-- Yüzde ekseni kutucukları -->
+    <!-- Yüzde ekseni -->
     <div class="block">
       <div class="label">Yüzde Ekseni</div>
       <div class="pills">
@@ -149,10 +149,16 @@
     </div>
   </div>
 
-  <!-- 3) Pivot -->
+  <!-- 3) Pivot + İndir -->
   <div class="card section">
-    <div class="section-headline">
-      <div class="badge">3</div><h3> Sonuçlar</h3>
+    <div class="section-headline" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="badge">3</div><h3> Sonuçlar</h3>
+      </div>
+      <div class="pills">
+        <button (click)="exportExcel()">Excel İndir</button>
+        <!-- <button (click)="exportPDF()">PDF İndir</button> -->
+      </div>
     </div>
 
     <div *ngIf="!factActive.length" class="hint">Tarih seçip <b>Hesapla</b>’ya basın.</div>

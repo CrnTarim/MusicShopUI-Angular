@@ -1,6 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import PivotGridDataSource from 'devextreme/ui/pivot_grid/data_source';
 
+// Angular 6 uyumlu import kalıpları
+// Angular 6 uyumlu
+import * as ExcelJS from 'exceljs';
+import * as FileSaver from 'file-saver';
+import * as jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+
+
+
+
 type Guid = string;
 
 /* ===== Orijinal tablolar ===== */
@@ -47,7 +59,7 @@ type PercentBasis = 'row' | 'column' | 'grand';
 @Component({
   selector: 'app-linechart',
   templateUrl: './linechart.component.html',
-  styleUrl: './linechart.component.css'
+  styleUrls: ['./linechart.component.css']
 })
 export class LinechartComponent implements OnInit {
   /* ---- Tarih ---- */
@@ -83,43 +95,12 @@ export class LinechartComponent implements OnInit {
   /* ====== Kriter (kolon) — tıklama sırasına göre ====== */
   columnOrder: Array<'Diagnosis' | 'ReportState'> = [];
 
-  /* ====== Bölge (satır) — dinamik toggle (en az bir tanesi açık kalsın) ====== */
-  rowSelected = { City: true, Hospital: false }; // açılış: sadece Şehir açık
+  /* ====== Bölge (satır) — en az bir tanesi açık kalsın ====== */
+  public rowSelected: { City: boolean; Hospital: boolean } = { City: true, Hospital: false };
 
   /* ====== Filtre panelleri aç/kapa ====== */
   openRegionFilters = false;
   openCriteriaFilters = false;
-
-  /* Eski API köprüsü (varsa) */
-  setRowMode(m: 'City' | 'Hospital' | 'CityHospital') {
-    this.rowSelected = m === 'City' ? { City: true, Hospital: false }
-      : m === 'Hospital' ? { City: false, Hospital: true }
-      : { City: true, Hospital: true };
-    this.openRegionFilters = true;   // bölge ayarı değişince bölge filtresi açılsın
-    this.updatePivot();
-  }
-
-  toggleRow(kind: 'City' | 'Hospital') {
-    const other = kind === 'City' ? 'Hospital' : 'City';
-
-    if (this.rowSelected[kind] && !this.rowSelected[other]) {
-      // Tek açık olana tekrar tıklanınca → diğeri de açılsın (ikisi açık)
-      this.rowSelected[other] = true;
-    } else {
-      // Normal toggle
-      this.rowSelected[kind] = !this.rowSelected[kind];
-      // Güvence: ikisi birden kapanmasın
-      if (!this.rowSelected.City && !this.rowSelected.Hospital) {
-        this.rowSelected[kind] = true;
-      }
-    }
-    this.openRegionFilters = true;   // kullanıcı bölgeyle oynadıysa filtreleri göster
-    this.updatePivot();
-  }
-
-  /* Filtre başlıklarından tıklayınca */
-  toggleRegionFilters(){ this.openRegionFilters = !this.openRegionFilters; }
-  toggleCriteriaFilters(){ this.openCriteriaFilters = !this.openCriteriaFilters; }
 
   /* ====== Lifecycle ====== */
   ngOnInit(): void {
@@ -238,7 +219,7 @@ export class LinechartComponent implements OnInit {
       const d = diagByReportId[r.id];
       const diag = diagnoses.find(xx => xx.id === d.diagnosisId)!;
 
-      out.push({
+    out.push({
         reportId: r.id,
         reportCode: r.reportCode,
         reportCreated: r.createdAt,
@@ -294,6 +275,24 @@ export class LinechartComponent implements OnInit {
   toggleDiagnosis(id: string){ this.selectedDiagnosisIds = this.toggleIn(this.selectedDiagnosisIds, id); this.applyFilters(); }
   toggleState(name: 'Onay'|'Açıklama'|'Manuel Açıklama'){ this.selectedStates = this.toggleIn(this.selectedStates, name); this.applyFilters(); }
 
+  /* ====== Bölge toggle (PUBLIC) ====== */
+  public toggleRow(kind: 'City' | 'Hospital'): void {
+    const other = kind === 'City' ? 'Hospital' : 'City';
+
+    if (this.rowSelected[kind] && !this.rowSelected[other]) {
+      // Tek açık olana tıklanınca diğerini de aç (en az 1 hep açık)
+      this.rowSelected[other] = true;
+    } else {
+      // Normal toggle
+      this.rowSelected[kind] = !this.rowSelected[kind];
+      if (!this.rowSelected.City && !this.rowSelected.Hospital) {
+        this.rowSelected[kind] = true;
+      }
+    }
+    this.openRegionFilters = true;
+    this.updatePivot();
+  }
+
   /* ====== Kriter (kolon) toggle ====== */
   toggleColumn(kind: 'Diagnosis' | 'ReportState'){
     const i = this.columnOrder.indexOf(kind);
@@ -303,7 +302,7 @@ export class LinechartComponent implements OnInit {
       if (this.columnOrder.length === 2) this.columnOrder.shift();
       this.columnOrder.push(kind);
     }
-    this.openCriteriaFilters = true; // kriterle oynanınca kriter filtrelerini göster
+    this.openCriteriaFilters = true;
     this.updatePivot();
   }
   columnRank(kind: 'Diagnosis' | 'ReportState'): number | null {
@@ -311,55 +310,40 @@ export class LinechartComponent implements OnInit {
     return i >= 0 ? (i + 1) : null; // 1 veya 2
   }
 
+  /* ====== Filtre başlıkları (PUBLIC) ====== */
+  public toggleRegionFilters(){ this.openRegionFilters = !this.openRegionFilters; }
+  public toggleCriteriaFilters(){ this.openCriteriaFilters = !this.openCriteriaFilters; }
+
   /* ====== Pivot alanları ====== */
   private buildFields(): any[] {
     const fields: any[] = [];
 
-    // ROW (hangileri seçiliyse onları ekle)
-    if (this.rowSelected.City) {
-      fields.push({ dataField: 'cityName', caption: 'Şehir', area: 'row' });
-    }
-    if (this.rowSelected.Hospital) {
-      fields.push({ dataField: 'hospitalName', caption: 'Hastane', area: 'row' });
-    }
+    // ROW
+    if (this.rowSelected.City)     fields.push({ dataField: 'cityName', caption: 'Şehir', area: 'row' });
+    if (this.rowSelected.Hospital) fields.push({ dataField: 'hospitalName', caption: 'Hastane', area: 'row' });
 
     // COLUMN (tıklama sırasına göre)
     for (const col of this.columnOrder) {
-      if (col === 'Diagnosis') {
-        fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
-      } else {
-        fields.push({ dataField: 'reportstate', caption: 'Rapor Durumu', area: 'column' });
-      }
+      if (col === 'Diagnosis') fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
+      else                     fields.push({ dataField: 'reportstate',  caption: 'Rapor Durumu', area: 'column' });
     }
 
     // DATA (count + %)
-    fields.push({
-      caption: 'Rapor (count)',
-      area: 'data',
-      dataField: 'reportId',
-      summaryType: 'count'
-    });
+    fields.push({ caption: 'Rapor (count)', area: 'data', dataField: 'reportId', summaryType: 'count' });
 
     const modeMap: {[k in PercentBasis]: 'percentOfRowTotal'|'percentOfColumnTotal'|'percentOfGrandTotal'} = {
-      row: 'percentOfRowTotal',
-      column: 'percentOfColumnTotal',
-      grand: 'percentOfGrandTotal'
+      row: 'percentOfRowTotal', column: 'percentOfColumnTotal', grand: 'percentOfGrandTotal'
     };
-
     fields.push({
-      caption: 'Oran',
-      area: 'data',
-      dataField: 'reportId',
-      summaryType: 'count',
-      summaryDisplayMode: modeMap[this.percentBasis],
-      format: { type: 'percent', precision: 2 }
+      caption: 'Oran', area: 'data', dataField: 'reportId', summaryType: 'count',
+      summaryDisplayMode: modeMap[this.percentBasis], format: { type: 'percent', precision: 2 }
     });
 
     return fields;
   }
 
   /* public: template çağırıyor */
-  updatePivot(): void {
+  public updatePivot(): void {
     if (!this.factActive.length) { this.pivotDs = null; return; }
     const fields = this.buildFields();
     this.pivotDs = new PivotGridDataSource({ fields, store: this.factActive });
@@ -395,4 +379,116 @@ export class LinechartComponent implements OnInit {
 
     this.pivotDs.reload();
   }
+
+  /* ====== İNDİRME: aktif filtrelerle ====== */
+  private fullyFiltered(): FactReport[] {
+    if (!this.factActive.length) return [];
+    const sCity  = new Set(this.selectedCityIds);
+    const sHosp  = new Set(this.selectedHospitalIds);
+    const sDiag  = new Set(this.selectedDiagnosisIds);
+    const sState = new Set(this.selectedStates);
+
+    return this.factActive.filter(r => {
+      if (sCity.size  && !sCity.has(r.cityId))         return false;
+      if (sHosp.size  && !sHosp.has(r.hospitalId))     return false;
+      if (sDiag.size  && !sDiag.has(r.diagnosisId))    return false;
+      if (sState.size && !sState.has(r.reportstate))   return false;
+      return true;
+    });
+  }
+
+  private fmtDate(d: Date): string {
+    const dd = new Date(d);
+    const y = dd.getFullYear();
+    const m = (dd.getMonth()+1).toString().padStart(2,'0');
+    const day = dd.getDate().toString().padStart(2,'0');
+    const hh = dd.getHours().toString().padStart(2,'0');
+    const mm = dd.getMinutes().toString().padStart(2,'0');
+    return `${y}-${m}-${day} ${hh}:${mm}`;
+  }
+
+  async exportExcel(): Promise<void> {
+    const rows = this.fullyFiltered();
+    if (!rows.length) { alert('İndirilecek veri yok.'); return; }
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Raporlar');
+
+    const headers = [
+      'Şehir','Hastane','Tanı','Rapor Durumu',
+      'Rapor Kodu','Provision Kodu','Oluşturma Tarihi'
+    ];
+    ws.addRow(headers);
+
+    rows.forEach(r => {
+      ws.addRow([
+        r.cityName,
+        r.hospitalName,
+        r.diagnosisName,
+        r.reportstate,
+        r.reportCode,
+        r.provisionCode,
+        this.fmtDate(r.reportCreated)
+      ]);
+    });
+
+    // Sürüm güvenli kolon genişlikleri
+    (ws.columns || []).forEach((_c: any, i: number) => {
+      const colObj: any = ws.getColumn(i + 1);
+      const header = Array.isArray(colObj.header) ? colObj.header.join(' / ') : (colObj.header || '');
+      colObj.width = Math.min(40, Math.max(12, String(header).length + 2));
+    });
+    ws.getRow(1).font = { bold: true };
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const fname = `raporlar_${this.startDateStr}_${this.endDateStr}.xlsx`;
+    FileSaver.saveAs(blob, fname);
+  }
+
+exportPDF(): void {
+  const rows = this.fullyFiltered();
+  if (!rows.length) { alert('İndirilecek veri yok.'); return; }
+
+  const header = ['Şehir','Hastane','Tanı','Rapor Durumu','Rapor Kodu','Prov. Kodu','Oluşturma'];
+  const body = rows.map(r => ([
+    r.cityName,
+    r.hospitalName,
+    r.diagnosisName,
+    r.reportstate,
+    String(r.reportCode),
+    r.provisionCode,
+    this.fmtDate(r.reportCreated)
+  ]));
+
+  const docDefinition: any = {
+    pageOrientation: 'landscape',
+    pageMargins: [20, 20, 20, 20],
+    content: [
+      { text: 'Raporlar (filtrelenmiş)', style: 'title', margin: [0, 0, 0, 10] },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*','*','*','auto','auto','auto','auto'],
+          body: [header, ...body]
+        },
+        layout: 'lightHorizontalLines'
+      }
+    ],
+    styles: {
+      title: { fontSize: 14, bold: true }
+    },
+    defaultStyle: { font: 'Roboto', fontSize: 9 } // pdfmake'in gömülü Roboto'su
+  };
+
+  (pdfMake as any).createPdf(docDefinition).download(`raporlar_${this.startDateStr}_${this.endDateStr}.pdf`);
 }
+
+
+}
+
+//7npm i exceljs@4 file-saver@2.0.5 jspdf@2.5.1 jspdf-autotable@3.5.28 --save
+//npm i -D @types/file-saver
+//npm i pdfmake@0.2 --save
+//npm i -D @types/pdfmake
+
