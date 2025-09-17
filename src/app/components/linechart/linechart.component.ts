@@ -487,8 +487,12 @@ exportPDF(): void {
 
 }
 
-//7npm i exceljs@4 file-saver@2.0.5 jspdf@2.5.1 jspdf-autotable@3.5.28 --save
+//npm i exceljs@4 file-saver@2.0.5 jspdf@2.5.1 jspdf-autotable@3.5.28 --save
 //npm i -D @types/file-saver
 //npm i pdfmake@0.2 --save
 //npm i -D @types/pdfmake
 
+// npm i exceljs@4 file-saver@2.0.5 --save
+// npm i -D @types/file-saver
+// import * as ExcelJS from 'exceljs';
+// import * as FileSaver from 'file-saver';
