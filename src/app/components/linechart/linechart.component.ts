@@ -57,16 +57,12 @@ export class LinechartComponent implements OnInit {
   /* ---- Yüzde ---- */
   percentBasis: PercentBasis = 'row';
 
-  /* ---- Panel aç/kapa ---- */
-  openRowSlicers = false;
-  openColSlicers = false;
-
   /* ---- Lookuplar ---- */
   cities: City[] = [];
   hospitals: Hosp[] = [];
   diagnoses: Diagnosis[] = [];
 
-  /* ---- Slicers ---- */
+  /* ---- Slicers (seçimler) ---- */
   selectedCityIds: string[] = [];
   selectedHospitalIds: string[] = [];
   selectedDiagnosisIds: string[] = [];
@@ -90,12 +86,16 @@ export class LinechartComponent implements OnInit {
   /* ====== Bölge (satır) — dinamik toggle (en az bir tanesi açık kalsın) ====== */
   rowSelected = { City: true, Hospital: false }; // açılış: sadece Şehir açık
 
-  /* Köprü: eski setRowMode çağrıları varsa bozulmasın */
+  /* ====== Filtre panelleri aç/kapa ====== */
+  openRegionFilters = false;
+  openCriteriaFilters = false;
+
+  /* Eski API köprüsü (varsa) */
   setRowMode(m: 'City' | 'Hospital' | 'CityHospital') {
     this.rowSelected = m === 'City' ? { City: true, Hospital: false }
       : m === 'Hospital' ? { City: false, Hospital: true }
       : { City: true, Hospital: true };
-    this.openRowSlicers = true;
+    this.openRegionFilters = true;   // bölge ayarı değişince bölge filtresi açılsın
     this.updatePivot();
   }
 
@@ -103,7 +103,7 @@ export class LinechartComponent implements OnInit {
     const other = kind === 'City' ? 'Hospital' : 'City';
 
     if (this.rowSelected[kind] && !this.rowSelected[other]) {
-      // Sadece bu açıkken kendisine tıklanırsa → diğeri de aktif olsun (ikisi de açık)
+      // Tek açık olana tekrar tıklanınca → diğeri de açılsın (ikisi açık)
       this.rowSelected[other] = true;
     } else {
       // Normal toggle
@@ -113,10 +113,13 @@ export class LinechartComponent implements OnInit {
         this.rowSelected[kind] = true;
       }
     }
-
-    this.openRowSlicers = this.rowSelected.City || this.rowSelected.Hospital;
+    this.openRegionFilters = true;   // kullanıcı bölgeyle oynadıysa filtreleri göster
     this.updatePivot();
   }
+
+  /* Filtre başlıklarından tıklayınca */
+  toggleRegionFilters(){ this.openRegionFilters = !this.openRegionFilters; }
+  toggleCriteriaFilters(){ this.openCriteriaFilters = !this.openCriteriaFilters; }
 
   /* ====== Lifecycle ====== */
   ngOnInit(): void {
@@ -300,7 +303,7 @@ export class LinechartComponent implements OnInit {
       if (this.columnOrder.length === 2) this.columnOrder.shift();
       this.columnOrder.push(kind);
     }
-    this.openColSlicers = this.columnOrder.length > 0;
+    this.openCriteriaFilters = true; // kriterle oynanınca kriter filtrelerini göster
     this.updatePivot();
   }
   columnRank(kind: 'Diagnosis' | 'ReportState'): number | null {
@@ -355,7 +358,7 @@ export class LinechartComponent implements OnInit {
     return fields;
   }
 
-  /* ==== ÖNEMLİ: template'ten çağrıldığı için public olmalı ==== */
+  /* public: template çağırıyor */
   updatePivot(): void {
     if (!this.factActive.length) { this.pivotDs = null; return; }
     const fields = this.buildFields();
