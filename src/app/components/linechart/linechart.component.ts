@@ -45,6 +45,7 @@ interface Reportdecision {
   reportCode: number;
   decisionId: Guid;
 }
+ 
 
 /* ===== Pivot'a giden TEK TABLO ===== */
 interface FactReport {
