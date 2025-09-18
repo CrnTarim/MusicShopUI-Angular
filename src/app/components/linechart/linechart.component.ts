@@ -1,17 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import PivotGridDataSource from 'devextreme/ui/pivot_grid/data_source';
 
-// Angular 6 uyumlu import kalıpları
 // Angular 6 uyumlu
 import * as ExcelJS from 'exceljs';
 import * as FileSaver from 'file-saver';
-import * as jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-
-
-
 
 type Guid = string;
 
@@ -38,6 +30,22 @@ interface ReportDiagnosis {
   diagnosisName: string;
 }
 
+/* ===== Yeni tablolar (Karar) ===== */
+interface HCdecisiondef {
+  id: Guid;
+  code: number;
+  name: string;
+  pertemonay: 0 | 1;
+  msbonay: 0 | 1;
+  bashekim: 0 | 1;
+}
+interface Reportdecision {
+  id: Guid;
+  reportId: Guid;
+  reportCode: number;
+  decisionId: Guid;
+}
+
 /* ===== Pivot'a giden TEK TABLO ===== */
 interface FactReport {
   reportId: string;
@@ -51,10 +59,17 @@ interface FactReport {
   provisionId: string; provisionCode: string;
 
   diagnosisId: string; diagnosisCode: string; diagnosisName: string;
+
+  // Karar + Onaylayan
+  decisionId: string;  decisionCode: number;  decisionName: string;
+  issuer: 'MSB' | 'PERTEM' | 'Başhekim';     // onaylayan
 }
 
 /* Yüzde tabanı */
 type PercentBasis = 'row' | 'column' | 'grand';
+
+/* ====== Kriter alanları (kolon) ====== */
+type ColumnKey = 'Diagnosis' | 'ReportState' | 'Decision';
 
 @Component({
   selector: 'app-linechart',
@@ -73,12 +88,18 @@ export class LinechartComponent implements OnInit {
   cities: City[] = [];
   hospitals: Hosp[] = [];
   diagnoses: Diagnosis[] = [];
+  decisions: HCdecisiondef[] = [];
 
   /* ---- Slicers (seçimler) ---- */
   selectedCityIds: string[] = [];
   selectedHospitalIds: string[] = [];
   selectedDiagnosisIds: string[] = [];
   selectedStates: Array<'Onay'|'Açıklama'|'Manuel Açıklama'> = [];
+  selectedDecisionIds: string[] = [];
+
+  // Onaylayan slicer
+  issuers: Array<'MSB'|'PERTEM'|'Başhekim'> = ['MSB','PERTEM','Başhekim'];
+  selectedIssuers: Array<'MSB'|'PERTEM'|'Başhekim'> = [];
 
   /* ---- Data ---- */
   private factAll: FactReport[] = [];
@@ -91,12 +112,17 @@ export class LinechartComponent implements OnInit {
   private cityById = new Map<string, City>();
   private hospById = new Map<string, Hosp>();
   private diagById = new Map<string, Diagnosis>();
+  private decById  = new Map<string, HCdecisiondef>();
 
-  /* ====== Kriter (kolon) — tıklama sırasına göre ====== */
-  columnOrder: Array<'Diagnosis' | 'ReportState'> = [];
+  /* ====== Kriter (kolon) — tıklama sırasına göre (max 3) ====== */
+  columnOrder: ColumnKey[] = [];
 
   /* ====== Bölge (satır) — en az bir tanesi açık kalsın ====== */
-  public rowSelected: { City: boolean; Hospital: boolean } = { City: true, Hospital: false };
+  public rowSelected: { Issuer: boolean; City: boolean; Hospital: boolean } = {
+    Issuer: false, // varsayılan kapalı
+    City: true,    // varsayılan açık
+    Hospital: false
+  };
 
   /* ====== Filtre panelleri aç/kapa ====== */
   openRegionFilters = false;
@@ -109,14 +135,17 @@ export class LinechartComponent implements OnInit {
     this.cities    = mock.cities;
     this.hospitals = mock.hospitals;
     this.diagnoses = mock.diagnoses;
+    this.decisions = mock.decisions;
 
     this.cityById = new Map(this.cities.map(c => [c.id, c] as [string, City]));
     this.hospById = new Map(this.hospitals.map(h => [h.id, h] as [string, Hosp]));
     this.diagById = new Map(this.diagnoses.map(d => [d.id, d] as [string, Diagnosis]));
+    this.decById  = new Map(this.decisions.map(d => [d.id, d] as [string, HCdecisiondef]));
 
     this.factAll = this.buildFactTable(
       mock.cities, mock.hospitals, mock.provisions,
-      mock.reports, mock.diagnoses, mock.reportDiagnoses
+      mock.reports, mock.diagnoses, mock.reportDiagnoses,
+      mock.decisions, mock.reportDecisions
     );
 
     this.initDefaultDates();
@@ -129,9 +158,16 @@ export class LinechartComponent implements OnInit {
   private between(min: number, max: number){ return Math.floor(this.rnd()*(max-min+1))+min; }
   private guid(prefix=''){ const h=()=>Math.floor(this.rnd()*0xffffffff).toString(16).padStart(8,'0'); return `${prefix}${h()}-${h().slice(0,4)}-${h().slice(0,4)}-${h().slice(0,4)}-${h()}`; }
 
+  private issuerOf(def: HCdecisiondef): 'MSB' | 'PERTEM' | 'Başhekim' {
+    if (def.msbonay === 1) return 'MSB';
+    if (def.pertemonay === 1) return 'PERTEM';
+    return 'Başhekim';
+  }
+
   private generateMock(seed=42): {
     cities: City[]; hospitals: Hosp[]; provisions: Provision[];
     reports: Report[]; diagnoses: Diagnosis[]; reportDiagnoses: ReportDiagnosis[];
+    decisions: HCdecisiondef[]; reportDecisions: Reportdecision[];
   } {
     this.seed = seed>>>0;
 
@@ -145,8 +181,9 @@ export class LinechartComponent implements OnInit {
       hospitals.push({ id:this.guid('H-'), code:hc++, name:`${c.name} ${types[k]}`, cityId:c.id });
     }
 
+    // PROVISION COUNT ↑ (rapor sayısını arttırmak için 60 yaptık)
     const provisions: Provision[] = [];
-    for (const h of hospitals) for (let i=1;i<=15;i++){
+    for (const h of hospitals) for (let i=1;i<=60;i++){
       provisions.push({ id:this.guid('PRV-'), code:`PRV-${h.code}-${i.toString().padStart(4,'0')}`, hospitalId:h.id });
     }
 
@@ -157,17 +194,28 @@ export class LinechartComponent implements OnInit {
     ];
     const diagnoses: Diagnosis[] = diagCatalog.map((d,i)=>({ id:`D-${(i+1).toString().padStart(2,'0')}`, code:d[0], name:d[1] }));
 
+    // Karar tanımları (örnek)
+    const decisions: HCdecisiondef[] = [
+      { id:this.guid('DEC-'), code:131, name:'TSK\'da görev yapabilir', pertemonay:1, msbonay:0, bashekim:0 },
+      { id:this.guid('DEC-'), code:132, name:'TSK\'da görev yapamaz',  pertemonay:1, msbonay:0, bashekim:0 },
+      { id:this.guid('DEC-'), code:10,  name:'Komando olmaya elverişlidir',  pertemonay:0, msbonay:1, bashekim:0 },
+      { id:this.guid('DEC-'), code:11,  name:'Komando olmaya elverişli değil', pertemonay:0, msbonay:1, bashekim:0 },
+      { id:this.guid('DEC-'), code:201, name:'İdari uygunluk', pertemonay:0, msbonay:0, bashekim:1 },
+      { id:this.guid('DEC-'), code:202, name:'İdari uygun değil', pertemonay:0, msbonay:0, bashekim:1 },
+    ];
+
     const today = new Date();
     let running = 20250000;
     const reports: Report[] = [];
     const reportDiagnoses: ReportDiagnosis[] = [];
+    const reportDecisions: Reportdecision[] = [];
 
     const provByHospital: {[hid:string]: Provision[]} = {};
     for (const p of provisions){ (provByHospital[p.hospitalId]||(provByHospital[p.hospitalId]=[])).push(p); }
 
     for (const h of hospitals){
       const provs = provByHospital[h.id];
-      for (let i=0;i<15;i++){
+      for (let i=0;i<provs.length;i++){
         const p = provs[i];
         const back = this.between(0, 180);
         const createdAt = new Date(today.getTime() - back*86400000);
@@ -194,22 +242,34 @@ export class LinechartComponent implements OnInit {
           diagnosisId: d.id,
           diagnosisName: d.name
         });
+
+        // rapor başına 1 karar
+        const dec = this.pick(decisions);
+        reportDecisions.push({
+          id: this.guid('RDC-'),
+          reportId: report.id,
+          reportCode: report.reportCode,
+          decisionId: dec.id
+        });
       }
     }
 
-    return { cities, hospitals, provisions, reports, diagnoses, reportDiagnoses };
+    return { cities, hospitals, provisions, reports, diagnoses, reportDiagnoses, decisions, reportDecisions };
   }
 
   /* ====== Fact tabloyu kur ====== */
   private buildFactTable(
     cities: City[], hospitals: Hosp[], provisions: Provision[],
-    reports: Report[], diagnoses: Diagnosis[], rdx: ReportDiagnosis[]
+    reports: Report[], diagnoses: Diagnosis[], rdx: ReportDiagnosis[],
+    decisions: HCdecisiondef[], rdc: Reportdecision[]
   ): FactReport[] {
 
     const cityById: {[id:string]: City} = {}; for (const c of cities) cityById[c.id] = c;
     const hospById: {[id:string]: Hosp} = {}; for (const h of hospitals) hospById[h.id] = h;
     const provById: {[id:string]: Provision} = {}; for (const p of provisions) provById[p.id] = p;
     const diagByReportId: {[rid:string]: ReportDiagnosis} = {}; for (const x of rdx) diagByReportId[x.reportId] = x;
+    const decById: {[id:string]: HCdecisiondef} = {}; for (const d of decisions) decById[d.id] = d;
+    const decByReportId: {[rid:string]: Reportdecision} = {}; for (const y of rdc) decByReportId[y.reportId] = y;
 
     const out: FactReport[] = [];
     for (const r of reports){
@@ -217,17 +277,27 @@ export class LinechartComponent implements OnInit {
       const h = hospById[p.hospitalId];
       const c = cityById[h.cityId];
       const d = diagByReportId[r.id];
-      const diag = diagnoses.find(xx => xx.id === d.diagnosisId)!;
 
-    out.push({
+      const rd = decByReportId[r.id];
+      const dDef = decById[rd.decisionId];
+
+      const issuer: 'MSB'|'PERTEM'|'Başhekim' =
+        dDef.msbonay === 1 ? 'MSB' : (dDef.pertemonay === 1 ? 'PERTEM' : 'Başhekim');
+
+      out.push({
         reportId: r.id,
         reportCode: r.reportCode,
         reportCreated: r.createdAt,
         reportstate: r.reportstate,
+
         cityId: c.id,      cityCode: c.code,      cityName: c.name,
         hospitalId: h.id,  hospitalCode: h.code,  hospitalName: h.name,
         provisionId: p.id, provisionCode: p.code,
-        diagnosisId: d.diagnosisId, diagnosisCode: diag.code, diagnosisName: d.diagnosisName
+
+        diagnosisId: d.diagnosisId, diagnosisCode: '', diagnosisName: d.diagnosisName,
+
+        decisionId: dDef.id, decisionCode: dDef.code, decisionName: dDef.name,
+        issuer: issuer
       });
     }
     return out;
@@ -274,40 +344,40 @@ export class LinechartComponent implements OnInit {
   toggleHospital(id: string){ this.selectedHospitalIds = this.toggleIn(this.selectedHospitalIds, id); this.applyFilters(); }
   toggleDiagnosis(id: string){ this.selectedDiagnosisIds = this.toggleIn(this.selectedDiagnosisIds, id); this.applyFilters(); }
   toggleState(name: 'Onay'|'Açıklama'|'Manuel Açıklama'){ this.selectedStates = this.toggleIn(this.selectedStates, name); this.applyFilters(); }
+  toggleDecision(id: string){ this.selectedDecisionIds = this.toggleIn(this.selectedDecisionIds, id); this.applyFilters(); }
+  toggleIssuer(name: 'MSB'|'PERTEM'|'Başhekim'){ this.selectedIssuers = this.toggleIn(this.selectedIssuers, name); this.applyFilters(); }
 
   /* ====== Bölge toggle (PUBLIC) ====== */
-  public toggleRow(kind: 'City' | 'Hospital'): void {
-    const other = kind === 'City' ? 'Hospital' : 'City';
+  public toggleRow(kind: 'Issuer' | 'City' | 'Hospital'): void {
+    const others = ['Issuer','City','Hospital'].filter(k => k !== kind) as Array<'Issuer'|'City'|'Hospital'>;
 
-    if (this.rowSelected[kind] && !this.rowSelected[other]) {
-      // Tek açık olana tıklanınca diğerini de aç (en az 1 hep açık)
-      this.rowSelected[other] = true;
-    } else {
-      // Normal toggle
-      this.rowSelected[kind] = !this.rowSelected[kind];
-      if (!this.rowSelected.City && !this.rowSelected.Hospital) {
-        this.rowSelected[kind] = true;
-      }
+    // Toggle
+    (this.rowSelected as any)[kind] = !(this.rowSelected as any)[kind];
+
+    // Hepsi kapanmasın → en az biri açık kalsın
+    if (!this.rowSelected.Issuer && !this.rowSelected.City && !this.rowSelected.Hospital) {
+      (this.rowSelected as any)[kind] = true;
     }
+
     this.openRegionFilters = true;
     this.updatePivot();
   }
 
   /* ====== Kriter (kolon) toggle ====== */
-  toggleColumn(kind: 'Diagnosis' | 'ReportState'){
+  toggleColumn(kind: ColumnKey){
     const i = this.columnOrder.indexOf(kind);
     if (i >= 0) {
       this.columnOrder.splice(i, 1);
     } else {
-      if (this.columnOrder.length === 2) this.columnOrder.shift();
+      if (this.columnOrder.length === 3) this.columnOrder.shift(); // max 3
       this.columnOrder.push(kind);
     }
     this.openCriteriaFilters = true;
     this.updatePivot();
   }
-  columnRank(kind: 'Diagnosis' | 'ReportState'): number | null {
+  columnRank(kind: ColumnKey): number | null {
     const i = this.columnOrder.indexOf(kind);
-    return i >= 0 ? (i + 1) : null; // 1 veya 2
+    return i >= 0 ? (i + 1) : null; // 1..3
   }
 
   /* ====== Filtre başlıkları (PUBLIC) ====== */
@@ -318,14 +388,21 @@ export class LinechartComponent implements OnInit {
   private buildFields(): any[] {
     const fields: any[] = [];
 
-    // ROW
+    // Onaylayan alanını her zaman ekle, area sadece seçiliyse
+    const issuerField: any = { dataField: 'issuer', caption: 'Onaylayan' };
+    if (this.rowSelected.Issuer) issuerField.area = 'row';
+    fields.push(issuerField);
+
+    // ROW devamı
     if (this.rowSelected.City)     fields.push({ dataField: 'cityName', caption: 'Şehir', area: 'row' });
     if (this.rowSelected.Hospital) fields.push({ dataField: 'hospitalName', caption: 'Hastane', area: 'row' });
 
-    // COLUMN (tıklama sırasına göre)
-    for (const col of this.columnOrder) {
-      if (col === 'Diagnosis') fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
-      else                     fields.push({ dataField: 'reportstate',  caption: 'Rapor Durumu', area: 'column' });
+    // COLUMN (tıklama sırası)
+    for (let k = 0; k < this.columnOrder.length; k++) {
+      const col = this.columnOrder[k];
+      if (col === 'Diagnosis')      fields.push({ dataField: 'diagnosisName', caption: 'Tanı', area: 'column' });
+      else if (col === 'ReportState') fields.push({ dataField: 'reportstate',  caption: 'Rapor Durumu', area: 'column' });
+      else /* Decision */           fields.push({ dataField: 'decisionName',  caption: 'Karar', area: 'column' });
     }
 
     // DATA (count + %)
@@ -359,7 +436,12 @@ export class LinechartComponent implements OnInit {
     const cityNames = names(this.selectedCityIds, this.cityById);
     const hospNames = names(this.selectedHospitalIds, this.hospById);
     const diagNames = names(this.selectedDiagnosisIds, this.diagById);
+    const decNames  = names(this.selectedDecisionIds, this.decById);
 
+    this.pivotDs.field('issuer', {
+      filterType: this.selectedIssuers.length ? 'include' : undefined,
+      filterValues: this.selectedIssuers.length ? this.selectedIssuers : undefined
+    });
     this.pivotDs.field('cityName', {
       filterType: cityNames.length ? 'include' : undefined,
       filterValues: cityNames.length ? cityNames : undefined
@@ -376,6 +458,10 @@ export class LinechartComponent implements OnInit {
       filterType: this.selectedStates.length ? 'include' : undefined,
       filterValues: this.selectedStates.length ? this.selectedStates : undefined
     });
+    this.pivotDs.field('decisionName', {
+      filterType: decNames.length ? 'include' : undefined,
+      filterValues: decNames.length ? decNames : undefined
+    });
 
     this.pivotDs.reload();
   }
@@ -387,12 +473,16 @@ export class LinechartComponent implements OnInit {
     const sHosp  = new Set(this.selectedHospitalIds);
     const sDiag  = new Set(this.selectedDiagnosisIds);
     const sState = new Set(this.selectedStates);
+    const sDec   = new Set(this.selectedDecisionIds);
+    const sIss   = new Set(this.selectedIssuers);
 
     return this.factActive.filter(r => {
-      if (sCity.size  && !sCity.has(r.cityId))         return false;
-      if (sHosp.size  && !sHosp.has(r.hospitalId))     return false;
-      if (sDiag.size  && !sDiag.has(r.diagnosisId))    return false;
-      if (sState.size && !sState.has(r.reportstate))   return false;
+      if (sIss.size  && !sIss.has(r.issuer))           return false;
+      if (sCity.size && !sCity.has(r.cityId))          return false;
+      if (sHosp.size && !sHosp.has(r.hospitalId))      return false;
+      if (sDiag.size && !sDiag.has(r.diagnosisId))     return false;
+      if (sState.size&& !sState.has(r.reportstate))    return false;
+      if (sDec.size  && !sDec.has(r.decisionId))       return false;
       return true;
     });
   }
@@ -415,24 +505,25 @@ export class LinechartComponent implements OnInit {
     const ws = wb.addWorksheet('Raporlar');
 
     const headers = [
-      'Şehir','Hastane','Tanı','Rapor Durumu',
+      'Onaylayan','Şehir','Hastane','Tanı','Rapor Durumu','Karar',
       'Rapor Kodu','Provision Kodu','Oluşturma Tarihi'
     ];
     ws.addRow(headers);
 
     rows.forEach(r => {
       ws.addRow([
+        r.issuer,
         r.cityName,
         r.hospitalName,
         r.diagnosisName,
         r.reportstate,
+        r.decisionName,
         r.reportCode,
         r.provisionCode,
         this.fmtDate(r.reportCreated)
       ]);
     });
 
-    // Sürüm güvenli kolon genişlikleri
     (ws.columns || []).forEach((_c: any, i: number) => {
       const colObj: any = ws.getColumn(i + 1);
       const header = Array.isArray(colObj.header) ? colObj.header.join(' / ') : (colObj.header || '');
@@ -445,54 +536,4 @@ export class LinechartComponent implements OnInit {
     const fname = `raporlar_${this.startDateStr}_${this.endDateStr}.xlsx`;
     FileSaver.saveAs(blob, fname);
   }
-
-exportPDF(): void {
-  const rows = this.fullyFiltered();
-  if (!rows.length) { alert('İndirilecek veri yok.'); return; }
-
-  const header = ['Şehir','Hastane','Tanı','Rapor Durumu','Rapor Kodu','Prov. Kodu','Oluşturma'];
-  const body = rows.map(r => ([
-    r.cityName,
-    r.hospitalName,
-    r.diagnosisName,
-    r.reportstate,
-    String(r.reportCode),
-    r.provisionCode,
-    this.fmtDate(r.reportCreated)
-  ]));
-
-  const docDefinition: any = {
-    pageOrientation: 'landscape',
-    pageMargins: [20, 20, 20, 20],
-    content: [
-      { text: 'Raporlar (filtrelenmiş)', style: 'title', margin: [0, 0, 0, 10] },
-      {
-        table: {
-          headerRows: 1,
-          widths: ['*','*','*','auto','auto','auto','auto'],
-          body: [header, ...body]
-        },
-        layout: 'lightHorizontalLines'
-      }
-    ],
-    styles: {
-      title: { fontSize: 14, bold: true }
-    },
-    defaultStyle: { font: 'Roboto', fontSize: 9 } // pdfmake'in gömülü Roboto'su
-  };
-
-  (pdfMake as any).createPdf(docDefinition).download(`raporlar_${this.startDateStr}_${this.endDateStr}.pdf`);
 }
-
-
-}
-
-//npm i exceljs@4 file-saver@2.0.5 jspdf@2.5.1 jspdf-autotable@3.5.28 --save
-//npm i -D @types/file-saver
-//npm i pdfmake@0.2 --save
-//npm i -D @types/pdfmake
-
-// npm i exceljs@4 file-saver@2.0.5 --save
-// npm i -D @types/file-saver
-// import * as ExcelJS from 'exceljs';
-// import * as FileSaver from 'file-saver';
