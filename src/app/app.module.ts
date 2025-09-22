@@ -3,11 +3,10 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { SingerComponent } from './components/singer/singer.component';
+
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SingerSearchPipe } from './pipe/singer-search.pipe';
-import { SingerProfileComponent } from './components/singer-profile/singer-profile.component';
 import { OrderByPipe } from './pipe/order-by.pipe';
 import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
@@ -15,13 +14,11 @@ import { EffectsModule } from '@ngrx/effects';
 import { singlesongReducer } from './state/song/song.reducer';
 import { UserComponent } from './components/user/user.component';
 import { LoginComponent } from './components/login/login.component';
-import { FavouritesongsComponent } from './components/favouritesongs/favouritesongs.component';
+
 import { MessageComponent } from './components/message/message.component';
 import { DxSelectBoxModule, DxDataGridModule, DxListModule, DxTextBoxModule, DxTagBoxModule, DxButtonModule, DxPieChartModule, DxPivotGridModule } from 'devextreme-angular';
 import { PersonComponent } from './components/person/person.component';
-import { SinglesongsComponent } from './components/singlesongs/singlesongs.component';
-import { BeatComponent } from './components/beat/beat.component';
-import { SinglebeatComponent } from './components/singlebeat/singlebeat.component';
+
 import { ReportComponent } from './components/report/report.component';
 import { ReportgridComponent } from './components/reportgrid/reportgrid.component';
 import { LinechartComponent } from './components/linechart/linechart.component';
@@ -32,23 +29,15 @@ import { LinechartComponent } from './components/linechart/linechart.component';
 @NgModule({
   declarations: [
     AppComponent,
-    SingerComponent,
     SingerSearchPipe,
-    SingerProfileComponent,
     OrderByPipe,
     UserComponent,
     LoginComponent,
-    FavouritesongsComponent,
     MessageComponent,
     PersonComponent,
-    SinglesongsComponent,
-    BeatComponent,
-    SinglebeatComponent,
     ReportComponent,
     ReportgridComponent,
     LinechartComponent ,
-    
-
     
   ],
   imports: [
